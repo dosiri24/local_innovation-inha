@@ -1,0 +1,354 @@
+{
+  "stores": [
+    {
+      "id": "S001",
+      "name": "월미도 횟집",
+      "category": "음식점",
+      "area": "월미도",
+      "themes": ["해산물", "바다전망"],
+      "desc": "신선한 해산물을 즐길 수 있는 곳",
+      "reviews": 250,
+      "is_franchise": false
+    },
+    {
+      "id": "S002",
+      "name": "개항로 책방",
+      "category": "서점",
+      "area": "개항로",
+      "themes": ["레트로", "독립서점"],
+      "desc": "오래된 책과 이야기가 있는 곳",
+      "reviews": 15,
+      "is_franchise": false
+    },
+    {
+      "id": "S003",
+      "name": "차이나타운 만두집",
+      "category": "음식점",
+      "area": "차이나타운",
+      "themes": ["중식", "전통"],
+      "desc": "전통 방식으로 만든 수제 만두",
+      "reviews": 180,
+      "is_franchise": false
+    },
+    {
+      "id": "S004",
+      "name": "골목카페 힐링",
+      "category": "카페",
+      "area": "골목상권",
+      "themes": ["조용함", "핸드드립"],
+      "desc": "조용한 골목 속 숨은 카페",
+      "reviews": 30,
+      "is_franchise": false
+    },
+    {
+      "id": "S005",
+      "name": "스타벅스 인천역점",
+      "category": "카페",
+      "area": "인천역",
+      "themes": ["브랜드", "편의성"],
+      "desc": "편리한 위치의 프랜차이즈 카페",
+      "reviews": 500,
+      "is_franchise": true
+    },
+    {
+      "id": "S006",
+      "name": "제물포 전통시장 떡집",
+      "category": "음식점",
+      "area": "제물포시장",
+      "themes": ["전통", "떡", "한식"],
+      "desc": "3대째 이어온 전통 떡집",
+      "reviews": 80,
+      "is_franchise": false
+    },
+    {
+      "id": "S007",
+      "name": "바다풍경 펜션카페",
+      "category": "카페",
+      "area": "월미도",
+      "themes": ["바다전망", "펜션"],
+      "desc": "바다를 보며 커피를 마실 수 있는 곳",
+      "reviews": 120,
+      "is_franchise": false
+    },
+    {
+      "id": "S008",
+      "name": "골목 수제버거",
+      "category": "음식점",
+      "area": "골목상권",
+      "themes": ["수제", "햄버거"],
+      "desc": "작은 골목의 수제 햄버거 전문점",
+      "reviews": 45,
+      "is_franchise": false
+    },
+    {
+      "id": "S009",
+      "name": "전통 한옥카페",
+      "category": "카페",
+      "area": "개항로",
+      "themes": ["한옥", "전통", "차"],
+      "desc": "한옥을 개조한 전통차 전문점",
+      "reviews": 65,
+      "is_franchise": false
+    },
+    {
+      "id": "S010",
+      "name": "맥도날드 인천점",
+      "category": "음식점",
+      "area": "인천역",
+      "themes": ["패스트푸드", "브랜드"],
+      "desc": "글로벌 패스트푸드 체인점",
+      "reviews": 800,
+      "is_franchise": true
+    },
+    {
+      "id": "S011",
+      "name": "골목 떡볶이",
+      "category": "음식점",
+      "area": "골목상권",
+      "themes": ["떡볶이", "분식", "저렴"],
+      "desc": "30년 전통의 골목 떡볶이집",
+      "reviews": 85,
+      "is_franchise": false
+    },
+    {
+      "id": "S012",
+      "name": "제물포 갤러리카페",
+      "category": "카페",
+      "area": "개항로",
+      "themes": ["갤러리", "예술", "전시"],
+      "desc": "지역 작가들의 작품을 전시하는 갤러리 카페",
+      "reviews": 42,
+      "is_franchise": false
+    },
+    {
+      "id": "S013",
+      "name": "바다소리 펜션",
+      "category": "숙박",
+      "area": "월미도",
+      "themes": ["바다전망", "펜션", "휴식"],
+      "desc": "파도소리를 들으며 휴식할 수 있는 펜션",
+      "reviews": 156,
+      "is_franchise": false
+    },
+    {
+      "id": "S014",
+      "name": "차이나타운 약재상",
+      "category": "약국",
+      "area": "차이나타운",
+      "themes": ["전통", "한약", "건강"],
+      "desc": "100년 전통의 한약재 전문점",
+      "reviews": 38,
+      "is_franchise": false
+    },
+    {
+      "id": "S015",
+      "name": "월미공원 사진관",
+      "category": "서비스",
+      "area": "월미도",
+      "themes": ["사진", "추억", "여행"],
+      "desc": "여행 기념사진 전문 스튜디오",
+      "reviews": 94,
+      "is_franchise": false
+    },
+    {
+      "id": "S016",
+      "name": "인천 자유공원 매점",
+      "category": "편의점",
+      "area": "자유공원",
+      "themes": ["편의점", "간식", "음료"],
+      "desc": "공원 내 유일한 매점",
+      "reviews": 67,
+      "is_franchise": false
+    },
+    {
+      "id": "S017",
+      "name": "제물포 수제 맥주집",
+      "category": "주점",
+      "area": "제물포시장",
+      "themes": ["수제맥주", "로컬", "야경"],
+      "desc": "지역 양조장에서 만든 수제 맥주 전문점",
+      "reviews": 178,
+      "is_franchise": false
+    },
+    {
+      "id": "S018",
+      "name": "개항로 빈티지샵",
+      "category": "의류",
+      "area": "개항로",
+      "themes": ["빈티지", "레트로", "패션"],
+      "desc": "1960-80년대 빈티지 의류 전문점",
+      "reviews": 23,
+      "is_franchise": false
+    },
+    {
+      "id": "S019",
+      "name": "골목 치킨집",
+      "category": "음식점",
+      "area": "골목상권",
+      "themes": ["치킨", "야식", "술안주"],
+      "desc": "바삭한 치킨으로 유명한 동네 치킨집",
+      "reviews": 203,
+      "is_franchise": false
+    },
+    {
+      "id": "S020",
+      "name": "차이나타운 짜장면집",
+      "category": "음식점",
+      "area": "차이나타운",
+      "themes": ["중식", "짜장면", "전통"],
+      "desc": "진짜 차이나타운 맛을 자랑하는 짜장면집",
+      "reviews": 312,
+      "is_franchise": false
+    },
+    {
+      "id": "S021",
+      "name": "월미도 바다카페",
+      "category": "카페",
+      "area": "월미도",
+      "themes": ["바다전망", "일몰", "데이트"],
+      "desc": "월미도 최고의 일몰 뷰를 자랑하는 카페",
+      "reviews": 445,
+      "is_franchise": false
+    },
+    {
+      "id": "S022",
+      "name": "제물포 공방",
+      "category": "체험",
+      "area": "제물포시장",
+      "themes": ["수공예", "체험", "기념품"],
+      "desc": "도자기, 가죽공예 등을 체험할 수 있는 공방",
+      "reviews": 51,
+      "is_franchise": false
+    },
+    {
+      "id": "S023",
+      "name": "개항로 고서점",
+      "category": "서점",
+      "area": "개항로",
+      "themes": ["고서", "희귀본", "역사"],
+      "desc": "희귀한 고서와 절판 도서를 판매하는 서점",
+      "reviews": 18,
+      "is_franchise": false
+    },
+    {
+      "id": "S024",
+      "name": "골목 순대국집",
+      "category": "음식점",
+      "area": "골목상권",
+      "themes": ["순대국", "서민음식", "따뜻함"],
+      "desc": "할머니 손맛을 자랑하는 순대국 전문점",
+      "reviews": 127,
+      "is_franchise": false
+    },
+    {
+      "id": "S025",
+      "name": "인천역 편의점",
+      "category": "편의점",
+      "area": "인천역",
+      "themes": ["편의점", "24시간", "교통"],
+      "desc": "인천역 내 24시간 편의점",
+      "reviews": 189,
+      "is_franchise": true
+    },
+    {
+      "id": "S026",
+      "name": "월미도 해물찜",
+      "category": "음식점",
+      "area": "월미도",
+      "themes": ["해물찜", "해산물", "매콤"],
+      "desc": "신선한 해물로 만든 매콤한 해물찜 전문점",
+      "reviews": 267,
+      "is_franchise": false
+    },
+    {
+      "id": "S027",
+      "name": "차이나타운 월병집",
+      "category": "제과점",
+      "area": "차이나타운",
+      "themes": ["월병", "중국과자", "전통"],
+      "desc": "전통 방식으로 만든 월병과 중국 과자 전문점",
+      "reviews": 89,
+      "is_franchise": false
+    },
+    {
+      "id": "S028",
+      "name": "제물포 꽃집",
+      "category": "꽃집",
+      "area": "제물포시장",
+      "themes": ["꽃", "선물", "기념일"],
+      "desc": "신선한 꽃과 화분을 판매하는 동네 꽃집",
+      "reviews": 72,
+      "is_franchise": false
+    },
+    {
+      "id": "S029",
+      "name": "개항로 타로카페",
+      "category": "카페",
+      "area": "개항로",
+      "themes": ["타로", "점술", "신비"],
+      "desc": "타로 상담을 받을 수 있는 특별한 카페",
+      "reviews": 156,
+      "is_franchise": false
+    },
+    {
+      "id": "S030",
+      "name": "골목 김밥천국",
+      "category": "음식점",
+      "area": "골목상권",
+      "themes": ["김밥", "분식", "24시간"],
+      "desc": "24시간 운영하는 김밥 전문점",
+      "reviews": 341,
+      "is_franchise": true
+    },
+    {
+      "id": "S031",
+      "name": "월미도 게스트하우스",
+      "category": "숙박",
+      "area": "월미도",
+      "themes": ["게스트하우스", "배낭여행", "저렴"],
+      "desc": "배낭여행객을 위한 경제적인 숙소",
+      "reviews": 234,
+      "is_franchise": false
+    },
+    {
+      "id": "S032",
+      "name": "차이나타운 선물가게",
+      "category": "기념품",
+      "area": "차이나타운",
+      "themes": ["기념품", "선물", "관광"],
+      "desc": "차이나타운 특색 기념품 전문점",
+      "reviews": 145,
+      "is_franchise": false
+    },
+    {
+      "id": "S033",
+      "name": "제물포 노래방",
+      "category": "오락",
+      "area": "제물포시장",
+      "themes": ["노래방", "오락", "친구"],
+      "desc": "최신 음향시설을 갖춘 노래방",
+      "reviews": 198,
+      "is_franchise": false
+    },
+    {
+      "id": "S034",
+      "name": "개항로 문방구",
+      "category": "문구점",
+      "area": "개항로",
+      "themes": ["문구", "학용품", "레트로"],
+      "desc": "옛날 추억이 담긴 레트로 문방구",
+      "reviews": 56,
+      "is_franchise": false
+    },
+    {
+      "id": "S035",
+      "name": "골목 족발집",
+      "category": "음식점",
+      "area": "골목상권",
+      "themes": ["족발", "보쌈", "야식"],
+      "desc": "쫄깃한 족발로 유명한 골목 맛집",
+      "reviews": 289,
+      "is_franchise": false
+    }
+  ]
+}

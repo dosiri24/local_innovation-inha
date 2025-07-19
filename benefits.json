@@ -1,0 +1,396 @@
+{
+  "benefits": [
+    {
+      "id": "B001",
+      "store_id": "S001",
+      "desc": "모듬회 10% 할인",
+      "value": 80,
+      "eco_value": 4000
+    },
+    {
+      "id": "B002",
+      "store_id": "S002",
+      "desc": "음료 주문 시 수제 엽서 증정",
+      "value": 70,
+      "eco_value": 1500
+    },
+    {
+      "id": "B003",
+      "store_id": "S003",
+      "desc": "만두 5개 세트 15% 할인",
+      "value": 75,
+      "eco_value": 3000
+    },
+    {
+      "id": "B004",
+      "store_id": "S004",
+      "desc": "핸드드립 커피 1+1",
+      "value": 85,
+      "eco_value": 3500
+    },
+    {
+      "id": "B005",
+      "store_id": "S005",
+      "desc": "아메리카노 500원 할인",
+      "value": 50,
+      "eco_value": 500
+    },
+    {
+      "id": "B006",
+      "store_id": "S006",
+      "desc": "전통 떡 체험 + 떡 1개 증정",
+      "value": 90,
+      "eco_value": 5000
+    },
+    {
+      "id": "B007",
+      "store_id": "S007",
+      "desc": "바다전망 테라스석 우선 배정",
+      "value": 85,
+      "eco_value": 2000
+    },
+    {
+      "id": "B008",
+      "store_id": "S008",
+      "desc": "수제버거 세트 20% 할인",
+      "value": 80,
+      "eco_value": 3500
+    },
+    {
+      "id": "B009",
+      "store_id": "S009",
+      "desc": "전통차 시음 + 차 선물세트 10% 할인",
+      "value": 75,
+      "eco_value": 6000
+    },
+    {
+      "id": "B010",
+      "store_id": "S010",
+      "desc": "빅맥세트 1000원 할인",
+      "value": 45,
+      "eco_value": 1000
+    },
+    {
+      "id": "B011",
+      "store_id": "S001",
+      "desc": "해산물탕 무료 서비스",
+      "value": 70,
+      "eco_value": 3000
+    },
+    {
+      "id": "B012",
+      "store_id": "S002",
+      "desc": "책 구매 시 북마크 제작 서비스",
+      "value": 65,
+      "eco_value": 2000
+    },
+    {
+      "id": "B013",
+      "store_id": "S004",
+      "desc": "디저트 주문 시 미니 화분 증정",
+      "value": 80,
+      "eco_value": 2500
+    },
+    {
+      "id": "B014",
+      "store_id": "S006",
+      "desc": "시장 투어 가이드 + 시식권",
+      "value": 95,
+      "eco_value": 4000
+    },
+    {
+      "id": "B015",
+      "store_id": "S008",
+      "desc": "감자튀김 무료 추가",
+      "value": 60,
+      "eco_value": 1500
+    },
+    {
+      "id": "B016",
+      "store_id": "S011",
+      "desc": "떡볶이 곱빼기 무료",
+      "value": 70,
+      "eco_value": 1200
+    },
+    {
+      "id": "B017",
+      "store_id": "S012",
+      "desc": "전시 관람 + 음료 할인",
+      "value": 85,
+      "eco_value": 3000
+    },
+    {
+      "id": "B018",
+      "store_id": "S013",
+      "desc": "숙박 시 조식 무료 제공",
+      "value": 90,
+      "eco_value": 8000
+    },
+    {
+      "id": "B019",
+      "store_id": "S014",
+      "desc": "건강 상담 + 샘플 한약재",
+      "value": 80,
+      "eco_value": 4500
+    },
+    {
+      "id": "B020",
+      "store_id": "S015",
+      "desc": "인생샷 촬영 + 액자 증정",
+      "value": 95,
+      "eco_value": 7000
+    },
+    {
+      "id": "B021",
+      "store_id": "S016",
+      "desc": "음료 2+1 이벤트",
+      "value": 60,
+      "eco_value": 1800
+    },
+    {
+      "id": "B022",
+      "store_id": "S017",
+      "desc": "수제맥주 시음 + 안주 서비스",
+      "value": 85,
+      "eco_value": 6000
+    },
+    {
+      "id": "B023",
+      "store_id": "S018",
+      "desc": "빈티지 액세서리 무료 증정",
+      "value": 75,
+      "eco_value": 4000
+    },
+    {
+      "id": "B024",
+      "store_id": "S019",
+      "desc": "치킨 1마리 주문 시 콜라 무료",
+      "value": 70,
+      "eco_value": 1000
+    },
+    {
+      "id": "B025",
+      "store_id": "S020",
+      "desc": "짜장면 + 탕수육 세트 15% 할인",
+      "value": 80,
+      "eco_value": 4500
+    },
+    {
+      "id": "B026",
+      "store_id": "S021",
+      "desc": "일몰 시간대 특별석 예약",
+      "value": 95,
+      "eco_value": 3000
+    },
+    {
+      "id": "B027",
+      "store_id": "S022",
+      "desc": "공예 체험 + 완성품 가져가기",
+      "value": 90,
+      "eco_value": 8000
+    },
+    {
+      "id": "B028",
+      "store_id": "S023",
+      "desc": "희귀본 열람 + 북마크 제작",
+      "value": 85,
+      "eco_value": 3000
+    },
+    {
+      "id": "B029",
+      "store_id": "S024",
+      "desc": "순대국 + 김치 무제한 리필",
+      "value": 75,
+      "eco_value": 1500
+    },
+    {
+      "id": "B030",
+      "store_id": "S025",
+      "desc": "생필품 구매 시 5% 할인",
+      "value": 50,
+      "eco_value": 1000
+    },
+    {
+      "id": "B031",
+      "store_id": "S026",
+      "desc": "해물찜 대형 주문 시 새우 추가",
+      "value": 85,
+      "eco_value": 5000
+    },
+    {
+      "id": "B032",
+      "store_id": "S027",
+      "desc": "월병 5개 구매 시 1개 증정",
+      "value": 70,
+      "eco_value": 2500
+    },
+    {
+      "id": "B033",
+      "store_id": "S028",
+      "desc": "꽃다발 주문 시 화분 증정",
+      "value": 80,
+      "eco_value": 4000
+    },
+    {
+      "id": "B034",
+      "store_id": "S029",
+      "desc": "타로 상담 + 음료 무료",
+      "value": 90,
+      "eco_value": 7000
+    },
+    {
+      "id": "B035",
+      "store_id": "S030",
+      "desc": "김밥 3줄 주문 시 1줄 무료",
+      "value": 65,
+      "eco_value": 1800
+    },
+    {
+      "id": "B036",
+      "store_id": "S031",
+      "desc": "3박 이상 숙박 시 마지막 날 50% 할인",
+      "value": 85,
+      "eco_value": 12000
+    },
+    {
+      "id": "B037",
+      "store_id": "S032",
+      "desc": "기념품 2개 구매 시 포장 서비스",
+      "value": 60,
+      "eco_value": 2000
+    },
+    {
+      "id": "B038",
+      "store_id": "S033",
+      "desc": "2시간 이용 시 추가 30분 무료",
+      "value": 70,
+      "eco_value": 3000
+    },
+    {
+      "id": "B039",
+      "store_id": "S034",
+      "desc": "레트로 문구 세트 10% 할인",
+      "value": 75,
+      "eco_value": 2000
+    },
+    {
+      "id": "B040",
+      "store_id": "S035",
+      "desc": "족발 대자 주문 시 막국수 무료",
+      "value": 80,
+      "eco_value": 3000
+    },
+    {
+      "id": "B041",
+      "store_id": "S011",
+      "desc": "떡볶이 + 튀김 세트 20% 할인",
+      "value": 75,
+      "eco_value": 2500
+    },
+    {
+      "id": "B042",
+      "store_id": "S012",
+      "desc": "작가와의 만남 이벤트 초대",
+      "value": 95,
+      "eco_value": 5000
+    },
+    {
+      "id": "B043",
+      "store_id": "S013",
+      "desc": "펜션 이용 시 바베큐 장비 무료 대여",
+      "value": 85,
+      "eco_value": 6000
+    },
+    {
+      "id": "B044",
+      "store_id": "S015",
+      "desc": "가족사진 촬영 시 추가 인화 무료",
+      "value": 80,
+      "eco_value": 3500
+    },
+    {
+      "id": "B045",
+      "store_id": "S017",
+      "desc": "맥주 4잔 주문 시 안주 플레이트 무료",
+      "value": 90,
+      "eco_value": 8000
+    },
+    {
+      "id": "B046",
+      "store_id": "S018",
+      "desc": "옷 구매 시 스타일링 조언 무료",
+      "value": 85,
+      "eco_value": 3000
+    },
+    {
+      "id": "B047",
+      "store_id": "S020",
+      "desc": "중국차 + 디저트 세트 할인",
+      "value": 75,
+      "eco_value": 3500
+    },
+    {
+      "id": "B048",
+      "store_id": "S021",
+      "desc": "커플 방문 시 특별 디저트 서비스",
+      "value": 90,
+      "eco_value": 4000
+    },
+    {
+      "id": "B049",
+      "store_id": "S022",
+      "desc": "가족 체험 시 기념품 제작 무료",
+      "value": 95,
+      "eco_value": 10000
+    },
+    {
+      "id": "B050",
+      "store_id": "S024",
+      "desc": "순대국 정식 + 후식 서비스",
+      "value": 80,
+      "eco_value": 2000
+    },
+    {
+      "id": "B051",
+      "store_id": "S026",
+      "desc": "해물찜 포장 시 밑반찬 추가",
+      "value": 70,
+      "eco_value": 2500
+    },
+    {
+      "id": "B052",
+      "store_id": "S027",
+      "desc": "중국 전통차 시음 체험",
+      "value": 85,
+      "eco_value": 3000
+    },
+    {
+      "id": "B053",
+      "store_id": "S029",
+      "desc": "연인 타로 상담 특별 패키지",
+      "value": 95,
+      "eco_value": 12000
+    },
+    {
+      "id": "B054",
+      "store_id": "S031",
+      "desc": "배낭여행객 특별 할인 + 여행 정보 제공",
+      "value": 80,
+      "eco_value": 5000
+    },
+    {
+      "id": "B055",
+      "store_id": "S032",
+      "desc": "관광 기념품 패키지 구성 서비스",
+      "value": 75,
+      "eco_value": 3500
+    },
+    {
+      "id": "B056",
+      "store_id": "S035",
+      "desc": "야식 타임 특별 메뉴 + 서비스",
+      "value": 85,
+      "eco_value": 4000
+    }
+  ]
+}

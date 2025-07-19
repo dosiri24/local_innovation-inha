@@ -1,0 +1,10 @@
+# 제물포GO 패스 - 의존성 목록
+
+# 🌐 HTTP 요청
+requests>=2.31.0
+
+# 🔐 환경 변수 관리  
+python-dotenv>=1.0.0
+
+# 🤖 Google Gemini AI
+google-generativeai>=0.3.0
