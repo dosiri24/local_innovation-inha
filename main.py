@@ -473,6 +473,101 @@ def print_pass_result(pass_obj: Pass, prefs: UserPrefs):
 
 
 def main():
+    """메인 애플리케이션 루프 (터미널 모드)"""
+    # 환경 변수 로드
+    load_dotenv()
+    
+    # 데이터 로드
+    print("데이터를 로드하는 중...")
+    stores, benefits = load_data()
+    
+    if not stores or not benefits:
+        print("[오류] 데이터 로드에 실패했습니다. 프로그램을 종료합니다.")
+        return
+    
+    print(f"[완료] {len(stores)}개 상점, {len(benefits)}개 혜택이 로드되었습니다.")
+    print()
+    
+    while True:
+        print_welcome()
+        
+        # 사용자 입력 받기
+        user_prefs = get_user_input()
+        
+        print(f"\n[처리 중] {PASS_TYPES[user_prefs.pass_type].name}를 생성하는 중...")
+        
+        # 패스 생성
+        generated_pass = generate_pass(user_prefs, stores, benefits)
+        
+        # 결과 출력
+        print_pass_result(generated_pass, user_prefs)
+        
+        # 계속 진행 여부 확인
+        print("\n" + "=" * 60)
+        while True:
+            continue_choice = input("다시 생성하시겠습니까? (y/n): ").strip().lower()
+            if continue_choice in ['y', 'yes', 'ㅇ']:
+                print()
+                break
+            elif continue_choice in ['n', 'no', 'ㄴ']:
+                print("\n[종료] 제물포GO 패스를 이용해주셔서 감사합니다!")
+                return
+            else:
+                print("y 또는 n을 입력해주세요.")
+
+
+def print_pass_result(pass_obj: Pass, prefs: UserPrefs):
+    """생성된 패스 결과 출력"""
+    pass_info = PASS_TYPES[prefs.pass_type]
+    
+    print("\n" + "=" * 60)
+    print("당신만의 제물포GO 패스가 생성되었습니다!")
+    print("=" * 60)
+    
+    if not pass_obj.recs:
+        print("[오류] 조건에 맞는 추천을 찾을 수 없습니다. 다른 조건으로 시도해주세요.")
+        return
+    
+    print(f"패스 정보:")
+    print(f"   • 패스 타입: {pass_info.name}")
+    print(f"   • 패스 가격: {pass_info.price:,}원")
+    print(f"   • 혜택 개수: {len(pass_obj.recs)}/{pass_info.max_benefits}개")
+    print(f"   • 총 혜택 가치: {pass_obj.total_value:,}원")
+    print(f"   • 가치 대비 효과: {(pass_obj.total_value / pass_info.price * 100):.0f}%")
+    print(f"   • 평균 상생 점수: {pass_obj.avg_synergy:.1f}점")
+    print()
+    
+    print("포함된 혜택:")
+    print("-" * 60)
+    
+    for i, rec in enumerate(pass_obj.recs, 1):
+        print(f"{i}. 상점: {rec['store_name']}")
+        print(f"   혜택: {rec['benefit_desc']}")
+        print(f"   가치: {rec['eco_value']:,}원")
+        print(f"   추천 이유: {rec['reason']}")
+        print()
+    
+    print("-" * 60)
+    
+    # 가치 평가
+    value_ratio = pass_obj.total_value / pass_info.price
+    if value_ratio >= 2.0:
+        print("[평가] 훌륭한 가성비! 패스 가격의 2배 이상 가치를 제공합니다!")
+    elif value_ratio >= 1.5:
+        print("[평가] 좋은 가성비! 패스 가격의 1.5배 이상 가치를 제공합니다!")
+    else:
+        print("[평가] 적당한 가성비의 패스입니다!")
+    
+    # 상생 효과 평가
+    if pass_obj.avg_synergy >= 70:
+        print("[상생] 우수한 지역 상생 효과를 가진 패스입니다!")
+    elif pass_obj.avg_synergy >= 50:
+        print("[상생] 좋은 지역 상생 효과를 가진 패스입니다!")
+    else:
+        print("[상생] 관광 만족도에 집중된 패스입니다!")
+
+
+def main():
     """메인 애플리케이션 루프"""
     # 환경 변수 로드
     load_dotenv()

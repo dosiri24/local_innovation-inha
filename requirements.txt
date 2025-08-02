@@ -8,3 +8,10 @@ python-dotenv>=1.0.0
 
 # 🤖 Google Gemini AI
 google-generativeai>=0.3.0
+
+# 🌐 웹 프레임워크
+flask>=2.3.0
+flask-cors>=4.0.0
+
+# 🐍 WSGI 서버 (구글 클라우드용)
+gunicorn>=21.0.0

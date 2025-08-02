@@ -1,0 +1,19 @@
+runtime: python313
+
+env_variables:
+  # 환경 변수 설정
+  GEMINI_API_KEY: "YOUR_API_KEY_HERE"
+  GEMINI_MODEL: "gemini-1.5-flash"
+  PORT: "8080"
+
+# 자동 스케일링 설정
+automatic_scaling:
+  min_instances: 1
+  max_instances: 10
+  target_cpu_utilization: 0.6
+
+# 리소스 설정
+resources:
+  cpu: 1
+  memory_gb: 1
+  disk_size_gb: 10
