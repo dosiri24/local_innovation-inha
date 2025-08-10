@@ -83,6 +83,14 @@ class Pass:
     qr_code_path: str = ""  # QR 코드 이미지 경로
 
 
+@dataclass
+class Theme:
+    """테마 정보를 담는 클래스"""
+    id: str
+    name: str
+    description: str
+
+
 def load_data() -> tuple[List[Store], List[Benefit]]:
     """stores.json과 benefits.json 파일을 읽어 Store와 Benefit 객체 리스트를 생성"""
     try:
@@ -115,6 +123,34 @@ def load_data() -> tuple[List[Store], List[Benefit]]:
     except Exception as e:
         print(f"데이터 로드 중 오류 발생: {e}")
         return [], []
+
+
+def load_themes() -> List[Theme]:
+    """themes.json 파일을 읽어 Theme 객체 리스트를 생성"""
+    try:
+        with open('themes.json', 'r', encoding='utf-8') as f:
+            themes_data = json.load(f)
+        
+        themes = []
+        for theme_data in themes_data['themes']:
+            theme = Theme(**theme_data)
+            themes.append(theme)
+        
+        return themes
+    
+    except FileNotFoundError as e:
+        print(f"테마 파일을 찾을 수 없습니다: {e}")
+        # 기본 테마 반환
+        return [
+            Theme("seafood", "해산물", "신선한 해산물과 바다의 맛"),
+            Theme("cafe", "카페", "편안한 카페 분위기"),
+            Theme("traditional", "전통", "한국의 전통 문화와 맛"),
+            Theme("retro", "레트로", "옛날 감성과 추억"),
+            Theme("quiet", "조용함", "평온하고 조용한 공간")
+        ]
+    except Exception as e:
+        print(f"테마 로드 중 오류 발생: {e}")
+        return []
 
 
 def get_synergy_score(store: Store) -> int:
@@ -554,11 +590,28 @@ def get_user_input() -> UserPrefs:
     print("맞춤형 패스 생성을 위한 정보를 입력해주세요:")
     print()
     
+    # 사용 가능한 테마 로드
+    available_themes = load_themes()
+    
     # 테마 입력
-    print("1. 관심 테마를 입력해주세요 (쉼표로 구분):")
-    print("   예시: 해산물, 카페, 전통, 레트로, 조용함")
-    themes_input = input("테마: ").strip()
-    themes = [theme.strip() for theme in themes_input.split(',') if theme.strip()]
+    print("1. 관심 테마를 선택해주세요 (번호로 선택, 쉼표로 구분):")
+    for i, theme in enumerate(available_themes, 1):
+        print(f"   {i}. {theme.name}")
+    
+    print("   또는 직접 입력: (예: 해산물, 카페, 전통)")
+    themes_input = input("테마 선택: ").strip()
+    
+    # 번호로 선택했는지 확인
+    selected_themes = []
+    if themes_input.replace(',', '').replace(' ', '').isdigit():
+        # 번호로 선택한 경우
+        theme_numbers = [int(x.strip()) for x in themes_input.split(',') if x.strip().isdigit()]
+        for num in theme_numbers:
+            if 1 <= num <= len(available_themes):
+                selected_themes.append(available_themes[num-1].name)
+    else:
+        # 직접 입력한 경우
+        selected_themes = [theme.strip() for theme in themes_input.split(',') if theme.strip()]
     
     # 자유 요청사항 입력
     print("\n2. 자유롭게 원하는 것을 설명해주세요:")
@@ -589,7 +642,7 @@ def get_user_input() -> UserPrefs:
         else:
             print("1, 2, 또는 3을 입력해주세요.")
     
-    return UserPrefs(themes=themes, request=request, pass_type=pass_type, budget=budget)
+    return UserPrefs(themes=selected_themes, request=request, pass_type=pass_type, budget=budget)
 
 
 def print_pass_result(pass_obj: Pass, prefs: UserPrefs):

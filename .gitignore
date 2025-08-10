@@ -70,3 +70,5 @@ templates/
 
 # 🔐 API 키 파일
 *.key
+app.yaml
+app.yaml

@@ -4,7 +4,7 @@ import json
 import os
 from main import (
     Store, Benefit, UserPrefs, Pass, PASS_TYPES,
-    load_data, generate_pass, save_pass_to_file, 
+    load_data, load_themes, generate_pass, save_pass_to_file, 
     load_pass_from_file, get_user_passes
 )
 from dotenv import load_dotenv
@@ -36,10 +36,28 @@ def index():
 @app.route('/api/themes')
 def get_themes():
     """사용 가능한 테마 목록 반환"""
-    themes = set()
-    for store in stores_data:
-        themes.update(store.themes)
-    return jsonify(sorted(list(themes)))
+    try:
+        themes = load_themes()
+        theme_list = []
+        
+        for theme in themes:
+            theme_list.append({
+                'id': theme.id,
+                'name': theme.name
+            })
+        
+        return jsonify(theme_list)
+    
+    except Exception as e:
+        print(f"[오류] 테마 로드 실패: {e}")
+        # 기본 테마 반환
+        return jsonify([
+            {'id': 'seafood', 'name': '해산물'},
+            {'id': 'cafe', 'name': '카페'},
+            {'id': 'traditional', 'name': '전통'},
+            {'id': 'retro', 'name': '레트로'},
+            {'id': 'quiet', 'name': '조용함'}
+        ])
 
 @app.route('/api/pass-types')
 def get_pass_types():
@@ -219,5 +237,5 @@ if __name__ == '__main__':
     initialize_data()
     
     # 개발 모드에서 실행
-    port = int(os.environ.get('PORT', 5000))
+    port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=True)

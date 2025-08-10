@@ -404,8 +404,8 @@
             availableThemes.forEach(theme => {
                 const themeElement = document.createElement('div');
                 themeElement.className = 'theme-tag';
-                themeElement.textContent = theme;
-                themeElement.onclick = () => toggleTheme(theme, themeElement);
+                themeElement.textContent = theme.name;  // theme 객체의 name 속성 사용
+                themeElement.onclick = () => toggleTheme(theme.name, themeElement);  // name을 전달
                 container.appendChild(themeElement);
             });
         }
