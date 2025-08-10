@@ -1,8 +1,8 @@
 runtime: python313
 
 env_variables:
-  # 환경 변수 설정
-  GEMINI_API_KEY: 
+  # 환경 변수 설정 - 실제 배포 시 YOUR_API_KEY_HERE를 실제 API 키로 교체하세요
+  GEMINI_API_KEY: "YOUR_API_KEY_HERE"
   GEMINI_MODEL: "gemini-2.5-flash"
   PORT: "8080"
 
