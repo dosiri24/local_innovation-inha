@@ -2,8 +2,8 @@ runtime: python313
 
 env_variables:
   # 환경 변수 설정
-  GEMINI_API_KEY: "YOUR_API_KEY_HERE"
-  GEMINI_MODEL: "gemini-1.5-flash"
+  GEMINI_API_KEY: 
+  GEMINI_MODEL: "gemini-2.5-flash"
   PORT: "8080"
 
 # 자동 스케일링 설정
