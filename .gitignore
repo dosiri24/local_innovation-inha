@@ -62,3 +62,13 @@ Thumbs.db
 *.log
 *.tmp
 *.temp
+
+# 📱 제물포GO 패스 시스템 - 생성된 파일들
+saved_passes/
+qr_codes/
+templates/
+
+# 🔐 API 키 파일
+*.key
+app.yaml
+app.yaml

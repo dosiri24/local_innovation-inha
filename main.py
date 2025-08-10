@@ -1,5 +1,8 @@
 import json
 import os
+import uuid
+import qrcode
+from datetime import datetime
 from dataclasses import dataclass
 from typing import List, Dict, Any
 from dotenv import load_dotenv
@@ -44,23 +47,25 @@ class PassType:
     """패스 타입 정보를 담는 클래스"""
     name: str
     price: int
-    max_benefits: int
     description: str
 
 
 # 패스 타입 정의
 PASS_TYPES = {
     "light": PassType(
-        name="라이트 패스",
-        price=7000,
-        max_benefits=3,
-        description="기본적인 혜택 3개로 구성된 가성비 패스"
+        name="스탠다드 패스",
+        price=9900,
+        description="기본적인 혜택들로 구성된 가성비 패스"
     ),
     "premium": PassType(
         name="프리미엄 패스", 
-        price=15000,
-        max_benefits=5,
-        description="다양한 혜택 5개로 구성된 풀 패키지 패스"
+        price=14900,
+        description="다양한 혜택들로 구성된 풀 패키지 패스"
+    ),
+    "citizen": PassType(
+        name="시민 우대 패스", 
+        price=7000,
+        description="인천 시민을 위해 꼭 필요한 혜택들로 구성된 패스"
     )
 }
 
@@ -72,6 +77,18 @@ class Pass:
     recs: List[Dict[str, Any]]  # 추천된 혜택과 이유
     avg_synergy: float
     total_value: int
+    pass_id: str = ""  # 패스 고유 식별자
+    pass_type: str = ""  # 패스 타입
+    created_at: str = ""  # 생성 시간
+    qr_code_path: str = ""  # QR 코드 이미지 경로
+
+
+@dataclass
+class Theme:
+    """테마 정보를 담는 클래스"""
+    id: str
+    name: str
+    description: str
 
 
 def load_data() -> tuple[List[Store], List[Benefit]]:
@@ -106,6 +123,34 @@ def load_data() -> tuple[List[Store], List[Benefit]]:
     except Exception as e:
         print(f"데이터 로드 중 오류 발생: {e}")
         return [], []
+
+
+def load_themes() -> List[Theme]:
+    """themes.json 파일을 읽어 Theme 객체 리스트를 생성"""
+    try:
+        with open('themes.json', 'r', encoding='utf-8') as f:
+            themes_data = json.load(f)
+        
+        themes = []
+        for theme_data in themes_data['themes']:
+            theme = Theme(**theme_data)
+            themes.append(theme)
+        
+        return themes
+    
+    except FileNotFoundError as e:
+        print(f"테마 파일을 찾을 수 없습니다: {e}")
+        # 기본 테마 반환
+        return [
+            Theme("seafood", "해산물", "신선한 해산물과 바다의 맛"),
+            Theme("cafe", "카페", "편안한 카페 분위기"),
+            Theme("traditional", "전통", "한국의 전통 문화와 맛"),
+            Theme("retro", "레트로", "옛날 감성과 추억"),
+            Theme("quiet", "조용함", "평온하고 조용한 공간")
+        ]
+    except Exception as e:
+        print(f"테마 로드 중 오류 발생: {e}")
+        return []
 
 
 def get_synergy_score(store: Store) -> int:
@@ -150,6 +195,131 @@ def calculate_theme_match_score(benefit: Benefit, store: Store, user_themes: Lis
     
     matches = sum(1 for theme in user_themes if theme in store.themes)
     return (matches / len(user_themes)) * 100
+
+
+def generate_pass_id() -> str:
+    """패스 고유 ID 생성"""
+    return str(uuid.uuid4())[:8].upper()
+
+
+def generate_qr_code(pass_id: str, save_dir: str = "qr_codes") -> str:
+    """QR 코드 생성 및 저장"""
+    try:
+        # QR 코드 저장 디렉토리 생성
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # QR 코드 데이터 (패스 조회 URL)
+        qr_data = f"https://jemulpogo.com/pass/{pass_id}"
+        
+        # QR 코드 생성
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_M,
+            box_size=10,
+            border=4,
+        )
+        qr.add_data(qr_data)
+        qr.make(fit=True)
+        
+        # 이미지 생성
+        img = qr.make_image(fill_color="black", back_color="white")
+        
+        # 파일 경로
+        qr_filename = f"pass_{pass_id}.png"
+        qr_path = os.path.join(save_dir, qr_filename)
+        
+        # 이미지 저장
+        img.save(qr_path)
+        
+        return qr_path
+        
+    except Exception as e:
+        print(f"[경고] QR 코드 생성 실패: {e}")
+        return ""
+
+
+def save_pass_to_file(pass_obj: Pass, user_email: str = None) -> bool:
+    """패스를 JSON 파일에 저장"""
+    try:
+        # 패스 데이터 저장 디렉토리 생성
+        save_dir = "saved_passes"
+        os.makedirs(save_dir, exist_ok=True)
+        
+        # 저장할 데이터 구성
+        pass_data = {
+            "pass_id": pass_obj.pass_id,
+            "user_id": pass_obj.user_id,
+            "user_email": user_email,
+            "pass_type": pass_obj.pass_type,
+            "created_at": pass_obj.created_at,
+            "recommendations": pass_obj.recs,
+            "avg_synergy": pass_obj.avg_synergy,
+            "total_value": pass_obj.total_value,
+            "qr_code_path": pass_obj.qr_code_path
+        }
+        
+        # 파일 경로
+        file_path = os.path.join(save_dir, f"pass_{pass_obj.pass_id}.json")
+        
+        # JSON 파일로 저장
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump(pass_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"[저장] 패스가 저장되었습니다: {file_path}")
+        return True
+        
+    except Exception as e:
+        print(f"[오류] 패스 저장 실패: {e}")
+        return False
+
+
+def load_pass_from_file(pass_id: str) -> Dict[str, Any]:
+    """패스 ID로 저장된 패스 데이터 로드"""
+    try:
+        file_path = os.path.join("saved_passes", f"pass_{pass_id}.json")
+        
+        if not os.path.exists(file_path):
+            return None
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            pass_data = json.load(f)
+        
+        return pass_data
+        
+    except Exception as e:
+        print(f"[오류] 패스 로드 실패: {e}")
+        return None
+
+
+def get_user_passes(user_email: str) -> List[Dict[str, Any]]:
+    """사용자의 모든 패스 조회"""
+    try:
+        save_dir = "saved_passes"
+        user_passes = []
+        
+        if not os.path.exists(save_dir):
+            return user_passes
+        
+        # 모든 패스 파일 검색
+        for filename in os.listdir(save_dir):
+            if filename.startswith("pass_") and filename.endswith(".json"):
+                file_path = os.path.join(save_dir, filename)
+                
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    pass_data = json.load(f)
+                
+                # 사용자 이메일이 일치하는 패스만 추가
+                if pass_data.get('user_email') == user_email:
+                    user_passes.append(pass_data)
+        
+        # 생성 시간 기준으로 정렬 (최신순)
+        user_passes.sort(key=lambda x: x.get('created_at', ''), reverse=True)
+        
+        return user_passes
+        
+    except Exception as e:
+        print(f"[오류] 사용자 패스 조회 실패: {e}")
+        return []
 
 
 def generate_pass(prefs: UserPrefs, stores: List[Store], benefits: List[Benefit]) -> Pass:
@@ -212,20 +382,21 @@ def generate_pass(prefs: UserPrefs, stores: List[Store], benefits: List[Benefit]
 요청사항: "{prefs.request}"
 선호 테마: {', '.join(prefs.themes) if prefs.themes else '없음'}
 선택한 패스: {pass_info.name} ({pass_info.price:,}원)
-패스 구성: 최대 {pass_info.max_benefits}개 혜택
+패스 구성: 총 혜택 가치가 패스 가격의 최대 2배({pass_info.price * 2:,}원)까지
 ---
 아래는 추천할 수 있는 혜택 후보 목록입니다. 각 혜택에는 금전적 가치(eco_value)가 포함되어 있습니다.
 ---
 후보 목록:
 {candidate_list_text}
 ---
-위 후보 목록 중에서, 사용자의 요청사항을 가장 잘 만족시키면서, {pass_info.name}에 적합한 **정확히 {pass_info.max_benefits}개**의 혜택을 선택해주세요.
+위 후보 목록 중에서, 사용자의 요청사항을 가장 잘 만족시키면서, {pass_info.name}에 적합한 혜택들을 선택해주세요.
 
 중요한 조건들:
-1. 정확히 {pass_info.max_benefits}개의 혜택만 선택해야 합니다.
-2. 사용자의 요청사항과 선호 테마를 최대한 반영해주세요.
-3. 선택된 혜택들의 총 금전적 가치가 패스 가격({pass_info.price:,}원)보다 높아야 합니다.
+1. 사용자의 요청사항과 선호 테마를 최대한 반영해주세요.
+2. 선택된 혜택들의 총 금전적 가치가 패스 가격({pass_info.price:,}원) 이상이어야 합니다.
+3. 선택된 혜택들의 총 금전적 가치가 패스 가격의 2배({pass_info.price * 2:,}원)를 초과하면 안 됩니다.
 4. 다양한 카테고리의 혜택을 조합해주세요.
+5. 가능한 한 많은 혜택을 포함하되, 가치 제한을 준수해주세요.
 
 그 이유와 함께 JSON 형식으로 반환해주세요. JSON 형식은 다음과 같아야 합니다:
 [{{"benefit_id": "B008", "reason": "조용히 책을 읽고 싶다는 요청에 가장 잘 맞는 장소입니다."}}, ...]
@@ -251,6 +422,7 @@ JSON만 반환해주세요. 다른 설명은 포함하지 마세요."""
         final_recs = []
         total_eco_value = 0
         synergy_scores = []
+        max_value_limit = pass_info.price * 2  # 가격의 2배까지 제한
         
         benefit_dict = {benefit.id: benefit for benefit in benefits}
         
@@ -258,11 +430,12 @@ JSON만 반환해주세요. 다른 설명은 포함하지 마세요."""
             benefit_id = rec.get('benefit_id')
             reason = rec.get('reason', '추천된 혜택입니다.')
             
-            if benefit_id in benefit_dict and len(final_recs) < pass_info.max_benefits:
+            if benefit_id in benefit_dict:
                 benefit = benefit_dict[benefit_id]
                 store = store_dict.get(benefit.store_id)
                 
-                if store:
+                # 가치 제한 확인
+                if store and total_eco_value + benefit.eco_value <= max_value_limit:
                     final_recs.append({
                         'benefit_id': benefit_id,
                         'store_name': store.name,
@@ -284,11 +457,26 @@ JSON만 반환해주세요. 다른 설명은 포함하지 마세요."""
             print("[경고] 혜택 가치가 패스 가격에 미달합니다. 규칙 기반 추천을 보완합니다.")
             return generate_rule_based_pass(prefs, stores, benefits, existing_recs=final_recs)
         
+        if total_eco_value > pass_info.price * 2:  # 가격의 2배 초과 방지
+            print("[경고] 혜택 가치가 너무 높습니다. 규칙 기반 추천을 사용합니다.")
+            return generate_rule_based_pass(prefs, stores, benefits)
+        
+        # 패스 고유 ID 및 시간 생성
+        pass_id = generate_pass_id()
+        created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        # QR 코드 생성
+        qr_code_path = generate_qr_code(pass_id)
+        
         return Pass(
             user_id="user_001",
             recs=final_recs,
             avg_synergy=avg_synergy,
-            total_value=total_eco_value
+            total_value=total_eco_value,
+            pass_id=pass_id,
+            pass_type=prefs.pass_type,
+            created_at=created_at,
+            qr_code_path=qr_code_path
         )
     
     except Exception as e:
@@ -330,12 +518,13 @@ def generate_rule_based_pass(prefs: UserPrefs, stores: List[Store], benefits: Li
             'score': score
         })
     
-    # 상위 후보들을 패스 타입에 맞게 선택
+    # 상위 후보들을 가치 제한 내에서 선택
     candidates.sort(key=lambda x: x['score'], reverse=True)
     
     final_recs = existing_recs.copy() if existing_recs else []
     current_value = total_used_value
     synergy_scores = []
+    max_value_limit = pass_info.price * 2  # 가격의 2배까지 제한
     
     if existing_recs:
         # 기존 추천의 상생 점수도 포함
@@ -348,14 +537,15 @@ def generate_rule_based_pass(prefs: UserPrefs, stores: List[Store], benefits: Li
                         synergy_scores.append(store.synergy)
                     break
     
-    # 패스 타입에 맞는 개수까지 선택
+    # 가치 제한 내에서 최대한 많은 혜택 선택
     for candidate in candidates:
-        if len(final_recs) >= pass_info.max_benefits:
-            break
-            
         benefit = candidate['benefit']
         store = candidate['store']
         
+        # 가치 제한 확인
+        if current_value + benefit.eco_value > max_value_limit:
+            continue
+            
         final_recs.append({
             'benefit_id': benefit.id,
             'store_name': store.name,
@@ -368,11 +558,22 @@ def generate_rule_based_pass(prefs: UserPrefs, stores: List[Store], benefits: Li
     
     avg_synergy = sum(synergy_scores) / len(synergy_scores) if synergy_scores else 0
     
+    # 패스 고유 ID 및 시간 생성
+    pass_id = generate_pass_id()
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # QR 코드 생성
+    qr_code_path = generate_qr_code(pass_id)
+    
     return Pass(
         user_id="user_001",
         recs=final_recs,
         avg_synergy=avg_synergy,
-        total_value=current_value
+        total_value=current_value,
+        pass_id=pass_id,
+        pass_type=prefs.pass_type,
+        created_at=created_at,
+        qr_code_path=qr_code_path
     )
 
 
@@ -389,11 +590,28 @@ def get_user_input() -> UserPrefs:
     print("맞춤형 패스 생성을 위한 정보를 입력해주세요:")
     print()
     
+    # 사용 가능한 테마 로드
+    available_themes = load_themes()
+    
     # 테마 입력
-    print("1. 관심 테마를 입력해주세요 (쉼표로 구분):")
-    print("   예시: 해산물, 카페, 전통, 레트로, 조용함")
-    themes_input = input("테마: ").strip()
-    themes = [theme.strip() for theme in themes_input.split(',') if theme.strip()]
+    print("1. 관심 테마를 선택해주세요 (번호로 선택, 쉼표로 구분):")
+    for i, theme in enumerate(available_themes, 1):
+        print(f"   {i}. {theme.name}")
+    
+    print("   또는 직접 입력: (예: 해산물, 카페, 전통)")
+    themes_input = input("테마 선택: ").strip()
+    
+    # 번호로 선택했는지 확인
+    selected_themes = []
+    if themes_input.replace(',', '').replace(' ', '').isdigit():
+        # 번호로 선택한 경우
+        theme_numbers = [int(x.strip()) for x in themes_input.split(',') if x.strip().isdigit()]
+        for num in theme_numbers:
+            if 1 <= num <= len(available_themes):
+                selected_themes.append(available_themes[num-1].name)
+    else:
+        # 직접 입력한 경우
+        selected_themes = [theme.strip() for theme in themes_input.split(',') if theme.strip()]
     
     # 자유 요청사항 입력
     print("\n2. 자유롭게 원하는 것을 설명해주세요:")
@@ -402,11 +620,13 @@ def get_user_input() -> UserPrefs:
     
     # 패스 타입 선택
     print("\n3. 패스 타입을 선택해주세요:")
-    print("   1번 라이트 패스 (7,000원) - 기본적인 혜택 3개")
-    print("   2번 프리미엄 패스 (15,000원) - 다양한 혜택 5개")
+    print("   1번 스탠다드 패스 (9,900원) - 기본적인 혜택들로 구성")
+    print("   2번 프리미엄 패스 (14,900원) - 다양한 혜택들로 구성")
+    print("   3번 시민 우대 패스 (7,000원) - 꼭 필요한 혜택들로 구성")
+    print("   ※ 모든 패스는 가격 대비 최대 2배까지의 가치를 제공합니다")
     
     while True:
-        choice = input("선택 (1 또는 2): ").strip()
+        choice = input("선택 (1, 2, 또는 3): ").strip()
         if choice == "1":
             pass_type = "light"
             budget = PASS_TYPES["light"].price
@@ -415,10 +635,14 @@ def get_user_input() -> UserPrefs:
             pass_type = "premium"
             budget = PASS_TYPES["premium"].price
             break
+        elif choice == "3":
+            pass_type = "citizen"
+            budget = PASS_TYPES["citizen"].price
+            break
         else:
-            print("1 또는 2를 입력해주세요.")
+            print("1, 2, 또는 3을 입력해주세요.")
     
-    return UserPrefs(themes=themes, request=request, pass_type=pass_type, budget=budget)
+    return UserPrefs(themes=selected_themes, request=request, pass_type=pass_type, budget=budget)
 
 
 def print_pass_result(pass_obj: Pass, prefs: UserPrefs):
@@ -434,12 +658,18 @@ def print_pass_result(pass_obj: Pass, prefs: UserPrefs):
         return
     
     print(f"패스 정보:")
+    print(f"   • 패스 ID: {pass_obj.pass_id}")
+    print(f"   • 생성 시간: {pass_obj.created_at}")
     print(f"   • 패스 타입: {pass_info.name}")
     print(f"   • 패스 가격: {pass_info.price:,}원")
-    print(f"   • 혜택 개수: {len(pass_obj.recs)}/{pass_info.max_benefits}개")
+    print(f"   • 혜택 개수: {len(pass_obj.recs)}개")
     print(f"   • 총 혜택 가치: {pass_obj.total_value:,}원")
     print(f"   • 가치 대비 효과: {(pass_obj.total_value / pass_info.price * 100):.0f}%")
     print(f"   • 평균 상생 점수: {pass_obj.avg_synergy:.1f}점")
+    
+    if pass_obj.qr_code_path:
+        print(f"   • QR 코드: {pass_obj.qr_code_path}")
+    
     print()
     
     print("포함된 혜택:")
@@ -473,7 +703,7 @@ def print_pass_result(pass_obj: Pass, prefs: UserPrefs):
 
 
 def main():
-    """메인 애플리케이션 루프"""
+    """메인 애플리케이션 루프 (터미널 모드)"""
     # 환경 변수 로드
     load_dotenv()
     
@@ -498,6 +728,13 @@ def main():
         
         # 패스 생성
         generated_pass = generate_pass(user_prefs, stores, benefits)
+        
+        # 패스 저장 (선택적으로 사용자 이메일도 받을 수 있음)
+        print(f"\n[저장] 패스 데이터를 저장하는 중...")
+        save_success = save_pass_to_file(generated_pass)
+        
+        if save_success:
+            print(f"[완료] 패스 ID: {generated_pass.pass_id}")
         
         # 결과 출력
         print_pass_result(generated_pass, user_prefs)
