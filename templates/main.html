@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>상생 여행 제물포GO</title>
+        <style>
+          * {
+              text-align: center;
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+          }
+
+          body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;    
+            line-height: 1.6;
+          }
+
+          #title {
+            font-size: 48px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin: 30px 0;
+            letter-spacing: 2px;
+          }
+
+          /* 메인 컨테이너 */
+          .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          }
+
+          /* 구분선 스타일 */
+          hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            margin: 30px 0;
+          }
+
+          /* 1. 네비게이션 영역을 감싸는 컨테이너 */
+          .nav-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+          }
+
+          /* 2. 모든 버튼에 적용될 공통 스타일 */
+          .nav-button {
+            text-decoration: none;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+
+          .nav-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(102, 126, 234, 0.4);
+            background: linear-gradient(45deg, #764ba2, #667eea);
+          }
+
+          .nav-button:active {
+            transform: translateY(-1px);
+          }
+
+          /* 소제목 스타일 */
+          #sm-title {
+            font-size: 24px;
+            color: #333;
+            margin: 40px 0;
+            font-weight: 500;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+          }
+
+          /* 이미지 컨테이너 */
+          .image-container {
+            margin: 30px 0;
+            transition: transform 0.3s ease;
+          }
+
+          .image-container:hover {
+            transform: scale(1.02);
+          }
+
+          .image-container img {
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            max-width: 100%;
+            height: auto;
+          }
+
+          .image-container img:hover {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+          }
+
+          /* 하단 버튼 컨테이너 */
+          .bottom-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+          }
+
+          .bottom-button {
+            text-decoration: none;
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+            transition: all 0.3s ease;
+          }
+
+          .bottom-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4);
+            background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+          }
+
+          /* 반응형 디자인 */
+          @media (max-width: 768px) {
+            #title {
+              font-size: 36px;
+            }
+            
+            .main-container {
+              margin: 10px;
+              padding: 20px;
+            }
+            
+            .nav-button {
+              padding: 12px 20px;
+              font-size: 14px;
+            }
+            
+            .image-container img {
+              width: 100%;
+              max-width: 500px;
+            }
+          }
+          
+        </style>
+    </head>
+    <body>
+        <p id="title"><strong>제물포GO 여행패스</strong></p>
+        
+        <div class="main-container">
+            <nav class="nav-container">
+                <a class="nav-button" href="/intro" target="_blank">제물포소개</a>
+                <a class="nav-button" href="/pass-generator" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24);">🎯 패스 만들기</a>
+                <a class="nav-button" href="/play" target="_blank">이용하기</a>
+                <a class="nav-button" href="/benef" target="_blank">혜택목록</a>
+                <a class="nav-button" href="/help" target="_blank">사용법</a>
+                <button onclick="logout()" class="nav-button" style="background: linear-gradient(45deg, #ff4757, #c44569);">🚪 로그아웃</button>
+            </nav>
+            
+            <hr>
+            
+            <h3 id="sm-title">모두가 즐길 수 있는 행복의 동네. 동인천에 빠져들어봐요!</h3>
+            
+            <div class="image-container">
+                <a href="/place" target="_blank" >
+                  <img src="/static/images/아름다운 동인천.png" width="700" height="900" title="동인천 명소 구경하러 가기" />
+                </a>
+            </div>
+            
+            <div class="image-container">
+                <a href="/taste" target="_blank" >
+                  <img src="/static/images/맛있는 동인천.png" width="700" height="900" title="제물포GO 제휴맛집 보러 가기" />
+                </a>
+            </div>
+            
+            <hr>
+            
+            <nav class="bottom-container">
+              <a class="bottom-button" href="https://www.youtube.com/@DiscoverIncheon" target="_blank" >인천관광공사 유튜브 채널</a>
+              <a class="bottom-button" href="https://docs.google.com/forms/d/e/1FAIpQLSdPKdacRl8nnHbUE0nh8T2xbqIs_Y4Om6MaKgbO3dAJwO2FIQ/viewform" target="_blank" >위대한 개발자께 문의하기</a>
+            </nav>
+        </div>
+
+        
+    </body>
+    <script>
+        async function logout() {
+            if (confirm('로그아웃 하시겠습니까?')) {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        alert('로그아웃되었습니다.');
+                        window.location.href = '/';
+                    }
+                } catch (error) {
+                    alert('로그아웃 중 오류가 발생했습니다.');
+                }
+            }
+        }
+    </script>
+</html>

@@ -1,7 +1,9 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, send_from_directory, session, redirect, url_for
 from flask_cors import CORS
+from flask_session import Session
 import json
 import os
+import secrets
 from main import (
     Store, Benefit, UserPrefs, Pass, PASS_TYPES,
     load_data, load_themes, generate_pass, save_pass_to_file, 
@@ -14,6 +16,12 @@ load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # CORS 허용
+
+# 세션 설정
+app.config['SECRET_KEY'] = secrets.token_hex(16)
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False
+Session(app)
 
 # 전역 데이터 저장
 stores_data = []
@@ -28,10 +36,143 @@ def initialize_data():
     else:
         print(f"[완료] {len(stores_data)}개 상점, {len(benefits_data)}개 혜택 로드됨")
 
+def login_required(f):
+    """로그인이 필요한 페이지에 적용할 데코레이터"""
+    def decorated_function(*args, **kwargs):
+        if 'user_logged_in' not in session:
+            return redirect(url_for('auth_page'))
+        return f(*args, **kwargs)
+    decorated_function.__name__ = f.__name__
+    return decorated_function
+
 @app.route('/')
-def index():
-    """메인 페이지"""
+def auth_page():
+    """인증 페이지 - 로그인/회원가입 선택"""
+    if 'user_logged_in' in session:
+        return redirect(url_for('main_page'))
+    return render_template('auth.html')
+
+@app.route('/main')
+@login_required
+def main_page():
+    """메인 페이지 - 로그인 후 접근 가능"""
+    return render_template('main.html')
+
+@app.route('/pass-generator')
+@login_required
+def pass_generator():
+    """패스 생성 페이지 - 기존 인덱스 페이지"""
     return render_template('index.html')
+
+# 로그인/회원가입 API
+@app.route('/api/login', methods=['POST'])
+def login_api():
+    """로그인 API"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        
+        if not email or not password:
+            return jsonify({'error': '이메일과 비밀번호를 입력해주세요.'}), 400
+        
+        # 간단한 로그인 검증 (실제 프로덕션에서는 데이터베이스와 연동)
+        # 여기서는 데모용으로 간단히 구현
+        if email and password:  # 이메일과 비밀번호가 있으면 로그인 성공
+            session['user_logged_in'] = True
+            session['user_email'] = email
+            return jsonify({'success': True, 'message': '로그인 성공!'})
+        else:
+            return jsonify({'error': '잘못된 이메일 또는 비밀번호입니다.'}), 401
+            
+    except Exception as e:
+        return jsonify({'error': f'로그인 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/api/signup', methods=['POST'])
+def signup_api():
+    """회원가입 API"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip()
+        password = data.get('password', '').strip()
+        confirm_password = data.get('confirm_password', '').strip()
+        
+        if not email or not password or not confirm_password:
+            return jsonify({'error': '모든 필드를 입력해주세요.'}), 400
+        
+        if password != confirm_password:
+            return jsonify({'error': '비밀번호가 일치하지 않습니다.'}), 400
+        
+        if len(password) < 6:
+            return jsonify({'error': '비밀번호는 6자 이상이어야 합니다.'}), 400
+        
+        # 간단한 회원가입 처리 (실제 프로덕션에서는 데이터베이스에 저장)
+        # 여기서는 데모용으로 바로 로그인 처리
+        session['user_logged_in'] = True
+        session['user_email'] = email
+        return jsonify({'success': True, 'message': '회원가입 성공!'})
+        
+    except Exception as e:
+        return jsonify({'error': f'회원가입 중 오류가 발생했습니다: {str(e)}'}), 500
+
+@app.route('/api/logout', methods=['POST'])
+def logout_api():
+    """로그아웃 API"""
+    session.clear()
+    return jsonify({'success': True, 'message': '로그아웃되었습니다.'})
+
+# 추가 페이지 라우팅 (모두 로그인 필요)
+@app.route('/intro')
+@login_required
+def intro():
+    """소개 페이지"""
+    return render_template('intro.html')
+
+@app.route('/taste')
+@login_required
+def taste():
+    """맛 테마 페이지"""
+    return render_template('taste.html')
+
+@app.route('/place')
+@login_required
+def place():
+    """장소 테마 페이지"""
+    return render_template('place.html')
+
+@app.route('/play')
+@login_required
+def play():
+    """놀이 테마 페이지"""
+    return render_template('play.html')
+
+@app.route('/benef')
+@login_required
+def benef():
+    """혜택 페이지"""
+    return render_template('benef.html')
+
+@app.route('/login')
+def login():
+    """로그인 페이지"""
+    return render_template('login.html')
+
+@app.route('/member')
+def member():
+    """회원가입 페이지"""
+    return render_template('memberIn.html')
+
+@app.route('/help')
+@login_required
+def help():
+    """도움말 페이지"""
+    return render_template('help.html')
+
+# 정적 파일 제공
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """정적 파일 제공"""
+    return send_from_directory('static', filename)
 
 @app.route('/api/themes')
 def get_themes():

@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>제물포GO 회원가입</title>
+    <meta charset="utf-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .signup-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .welcome-section {
+            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 2px solid #e1e5ff;
+        }
+
+        .welcome-section h3 {
+            color: #667eea;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+
+        .welcome-section p {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #999;
+        }
+
+        .password-requirements {
+            background: rgba(102, 126, 234, 0.05);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #666;
+            text-align: left;
+        }
+
+        .password-requirements ul {
+            margin: 10px 0 0 20px;
+        }
+
+        .password-requirements li {
+            margin-bottom: 5px;
+        }
+
+        .signup-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 18px 30px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .signup-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .signup-btn:active {
+            transform: translateY(0);
+        }
+
+        .signup-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .divider {
+            margin: 30px 0;
+            position: relative;
+            text-align: center;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ccc, transparent);
+        }
+
+        .divider span {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0 20px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .login-link {
+            margin-top: 20px;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .login-link a:hover {
+            color: #764ba2;
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background: linear-gradient(135deg, #fff5f5, #fed7d7);
+            color: #c53030;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #fc8181;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #f0fff4, #c6f6d5);
+            color: #276749;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #9ae6b4;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            padding: 10px 15px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .terms-section {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+            text-align: left;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .terms-section h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .signup-container {
+                padding: 30px 25px;
+                margin: 10px;
+            }
+
+            .logo {
+                font-size: 28px;
+            }
+
+            .back-link {
+                position: relative;
+                top: auto;
+                left: auto;
+                display: inline-block;
+                margin-bottom: 20px;
+            }
+
+            .welcome-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-link">← 메인으로</a>
+    
+    <div class="signup-container">
+        <h1 class="logo">🎟️ 제물포GO</h1>
+        <p class="subtitle">새로운 계정을 만들어 여행을 시작하세요</p>
+
+        <div class="welcome-section">
+            <h3>🌟 제물포GO에 오신 것을 환영합니다!</h3>
+            <p>AI가 추천하는 맞춤형 인천 여행패스로 특별한 경험을 만들어보세요.</p>
+        </div>
+
+        <div class="error-message" id="error-message">
+            <!-- 오류 메시지가 여기에 표시됩니다 -->
+        </div>
+
+        <div class="success-message" id="success-message">
+            <!-- 성공 메시지가 여기에 표시됩니다 -->
+        </div>
+
+        <form id="signup-form">
+            <div class="form-group">
+                <label for="signup-email">📧 이메일 주소</label>
+                <input 
+                    type="email" 
+                    id="signup-email" 
+                    class="form-input"
+                    placeholder="example@email.com"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="signup-password">🔒 비밀번호</label>
+                <input 
+                    type="password" 
+                    id="signup-password" 
+                    class="form-input"
+                    placeholder="안전한 비밀번호를 입력하세요"
+                    required
+                    minlength="6"
+                >
+                <div class="password-requirements">
+                    <strong>비밀번호 요구사항:</strong>
+                    <ul>
+                        <li>최소 6자 이상</li>
+                        <li>영문자와 숫자 조합 권장</li>
+                        <li>특수문자 포함 시 더욱 안전</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm-password">🔒 비밀번호 확인</label>
+                <input 
+                    type="password" 
+                    id="confirm-password" 
+                    class="form-input"
+                    placeholder="비밀번호를 다시 입력하세요"
+                    required
+                >
+            </div>
+
+            <div class="terms-section">
+                <h4>📋 이용약관 및 개인정보처리방침</h4>
+                <p>회원가입을 진행하시면 제물포GO의 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다. 
+                   수집된 정보는 서비스 제공 목적으로만 사용되며, 안전하게 보호됩니다.</p>
+            </div>
+
+            <button type="submit" class="signup-btn" id="signup-btn">
+                ✨ 회원가입
+            </button>
+        </form>
+
+        <div class="divider">
+            <span>또는</span>
+        </div>
+
+        <div class="login-link">
+            <p>이미 계정이 있으신가요? <a href="login.html">로그인하기</a></p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK 초기화 코드 (모든 페이지에 필요) -->
+    <script type="module" src="auth.js"></script>
+    
+    <script>
+        // 폼 제출 이벤트 처리
+        document.getElementById('signup-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+            const signupBtn = document.getElementById('signup-btn');
+            
+            // 비밀번호 확인
+            if (password !== confirmPassword) {
+                showMessage('비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+            
+            // 비밀번호 길이 검증
+            if (password.length < 6) {
+                showMessage('비밀번호는 최소 6자 이상이어야 합니다.', 'error');
+                return;
+            }
+            
+            // 버튼 비활성화
+            signupBtn.disabled = true;
+            signupBtn.textContent = '가입 중...';
+            
+            // 기존 signUp 함수 호출
+            if (typeof signUp === 'function') {
+                signUp();
+            } else {
+                // signUp 함수가 없는 경우 기본 처리
+                setTimeout(() => {
+                    showMessage('회원가입 기능을 구현 중입니다.', 'error');
+                    signupBtn.disabled = false;
+                    signupBtn.textContent = '✨ 회원가입';
+                }, 1000);
+            }
+        });
+
+        // 비밀번호 확인 실시간 검증
+        document.getElementById('confirm-password').addEventListener('input', function() {
+            const password = document.getElementById('signup-password').value;
+            const confirmPassword = this.value;
+            
+            if (confirmPassword && password !== confirmPassword) {
+                this.style.borderColor = '#fc8181';
+            } else {
+                this.style.borderColor = '#e1e1e1';
+            }
+        });
+
+        // 메시지 표시 함수
+        function showMessage(message, type = 'error') {
+            const errorDiv = document.getElementById('error-message');
+            const successDiv = document.getElementById('success-message');
+            
+            // 모든 메시지 숨기기
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+            
+            if (type === 'success') {
+                successDiv.textContent = message;
+                successDiv.style.display = 'block';
+            } else {
+                errorDiv.textContent = message;
+                errorDiv.style.display = 'block';
+            }
+            
+            // 5초 후 메시지 숨기기
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        // 회원가입 성공 시 호출할 함수 (auth.js에서 사용 가능)
+        window.onSignUpSuccess = function() {
+            showMessage('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.', 'success');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 2000);
+        };
+
+        // 회원가입 실패 시 호출할 함수 (auth.js에서 사용 가능)
+        window.onSignUpError = function(errorMessage) {
+            showMessage(errorMessage || '회원가입 중 오류가 발생했습니다.', 'error');
+            const signupBtn = document.getElementById('signup-btn');
+            signupBtn.disabled = false;
+            signupBtn.textContent = '✨ 회원가입';
+        };
+    </script>
+</body>
+</html>
