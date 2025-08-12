@@ -222,6 +222,7 @@ def get_pass_types():
     })
 
 @app.route('/api/generate-pass', methods=['POST'])
+@login_required
 def generate_pass_api():
     """패스 생성 API"""
     try:
@@ -234,7 +235,9 @@ def generate_pass_api():
         themes = data.get('themes', [])
         request_text = data.get('request', '').strip()
         pass_type = data.get('pass_type', 'light')
-        user_email = data.get('user_email', '')  # 사용자 이메일 (선택적)
+        
+        # 세션에서 사용자 이메일 가져오기
+        user_email = session.get('user_email', 'demo@jemulpogo.com')
         
         if not request_text:
             return jsonify({'error': '요청사항을 입력해주세요.'}), 400
@@ -256,8 +259,15 @@ def generate_pass_api():
         if not generated_pass.recs:
             return jsonify({'error': '조건에 맞는 추천을 찾을 수 없습니다.'}), 400
         
+        # 패스 저장을 위한 사용자 입력 정보
+        user_input_data = {
+            'themes': themes,
+            'request': request_text,
+            'pass_type': pass_type
+        }
+        
         # 패스 저장
-        save_success = save_pass_to_file(generated_pass, user_email)
+        save_success = save_pass_to_file(generated_pass, user_email, user_input_data)
         
         # 응답 데이터 구성
         pass_info = PASS_TYPES[pass_type]
@@ -316,13 +326,12 @@ def get_pass_by_id(pass_id):
 
 
 @app.route('/api/user/passes')
+@login_required
 def get_user_passes_api():
     """사용자의 모든 패스 조회"""
     try:
-        user_email = request.args.get('email')
-        
-        if not user_email:
-            return jsonify({'error': '사용자 이메일이 필요합니다.'}), 400
+        # 세션에서 사용자 이메일 가져오기
+        user_email = session.get('user_email', 'demo@jemulpogo.com')
         
         user_passes = get_user_passes(user_email)
         

@@ -238,12 +238,15 @@ def generate_qr_code(pass_id: str, save_dir: str = "qr_codes") -> str:
         return ""
 
 
-def save_pass_to_file(pass_obj: Pass, user_email: str = None) -> bool:
+def save_pass_to_file(pass_obj: Pass, user_email: str = None, user_input: Dict = None) -> bool:
     """패스를 JSON 파일에 저장"""
     try:
         # 패스 데이터 저장 디렉토리 생성
         save_dir = "saved_passes"
         os.makedirs(save_dir, exist_ok=True)
+        
+        # 패스 정보 가져오기
+        pass_info = PASS_TYPES.get(pass_obj.pass_type, PASS_TYPES['light'])
         
         # 저장할 데이터 구성
         pass_data = {
@@ -255,7 +258,16 @@ def save_pass_to_file(pass_obj: Pass, user_email: str = None) -> bool:
             "recommendations": pass_obj.recs,
             "avg_synergy": pass_obj.avg_synergy,
             "total_value": pass_obj.total_value,
-            "qr_code_path": pass_obj.qr_code_path
+            "qr_code_path": pass_obj.qr_code_path,
+            "pass_info": {
+                "name": pass_info.name,
+                "price": pass_info.price,
+                "description": pass_info.description,
+                "benefits_count": len(pass_obj.recs),
+                "total_value": pass_obj.total_value,
+                "value_ratio": round((pass_obj.total_value / pass_info.price) * 100, 0) if pass_info.price > 0 else 0
+            },
+            "user_input": user_input or {}
         }
         
         # 파일 경로
@@ -729,9 +741,16 @@ def main():
         # 패스 생성
         generated_pass = generate_pass(user_prefs, stores, benefits)
         
+        # 패스 저장을 위한 사용자 입력 정보
+        user_input_data = {
+            'themes': user_prefs.themes,
+            'request': user_prefs.request,
+            'pass_type': user_prefs.pass_type
+        }
+        
         # 패스 저장 (선택적으로 사용자 이메일도 받을 수 있음)
         print(f"\n[저장] 패스 데이터를 저장하는 중...")
-        save_success = save_pass_to_file(generated_pass)
+        save_success = save_pass_to_file(generated_pass, None, user_input_data)
         
         if save_success:
             print(f"[완료] 패스 ID: {generated_pass.pass_id}")

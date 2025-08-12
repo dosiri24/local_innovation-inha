@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제물포GO 패스 생성기 - AI 맞춤형 관광 추천</title>
+    <title>제물포GO 패스 이용하기 - 내 패스 관리</title>
     <style>
         * {
             margin: 0;
@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -51,145 +51,223 @@
             margin-bottom: 20px;
         }
 
-        .form-group {
+        .no-passes {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .no-passes h3 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 15px;
+        }
+
+        .no-passes p {
+            color: #666;
+            font-size: 1.1em;
             margin-bottom: 30px;
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 12px;
-            font-weight: 600;
-            color: #555;
-            font-size: 18px;
-        }
-
-        .form-group input[type="text"], 
-        .form-group textarea {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #e1e1e1;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            background: white;
-        }
-
-        .form-group input[type="text"]:focus, 
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .themes-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 15px;
-        }
-
-        .theme-tag {
-            background: linear-gradient(45deg, #f8f9ff, #e6e9ff);
-            padding: 10px 18px;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
-            font-weight: 500;
-        }
-
-        .theme-tag:hover {
-            background: linear-gradient(45deg, #e6e9ff, #d1d5ff);
-            transform: translateY(-2px);
-        }
-
-        .theme-tag.selected {
+        .create-pass-btn {
             background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
-            border-color: #5a67d8;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
         }
 
-        .pass-types {
+        .create-pass-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .passes-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 20px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .pass-card {
+            background: linear-gradient(135deg, #ffffff, #f8f9ff);
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #e1e5ff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pass-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
+            border-color: #667eea;
+        }
+
+        .pass-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
         }
 
         .pass-type {
-            border: 3px solid #e1e1e1;
-            border-radius: 15px;
-            padding: 25px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            background: white;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
         }
 
-        .pass-type:hover {
-            border-color: #667eea;
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        .pass-date {
+            color: #666;
+            font-size: 0.85em;
         }
 
-        .pass-type.selected {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
-        }
-
-        .pass-type h3 {
-            color: #667eea;
-            margin-bottom: 12px;
+        .pass-info h3 {
+            color: #333;
+            margin-bottom: 15px;
             font-size: 1.3em;
         }
 
-        .pass-type .price {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 8px;
+        .pass-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        .pass-type .description {
+        .stat-item {
+            text-align: center;
+            padding: 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #666;
+        }
+
+        .pass-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .view-qr-btn, .view-details-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            font-size: 0.9em;
+        }
+
+        .view-qr-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .view-qr-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .view-details-btn {
+            background: linear-gradient(45deg, #f8f9ff, #e6e9ff);
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .view-details-btn:hover {
+            background: linear-gradient(45deg, #e6e9ff, #d1d5ff);
+        }
+
+        .qr-modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
+        .qr-modal-content {
+            background: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .qr-close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+
+        .qr-close:hover {
+            color: #667eea;
+        }
+
+        .qr-code-container {
+            margin: 30px 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
+            border-radius: 15px;
+            border: 2px solid #e1e5ff;
+        }
+
+        .qr-code-image {
+            max-width: 250px;
+            max-height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .qr-info {
+            margin-top: 20px;
             color: #666;
             font-size: 0.95em;
-            line-height: 1.4;
-        }
-
-        .generate-btn {
-            width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 18px 30px;
-            font-size: 18px;
-            font-weight: 600;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 30px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .generate-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
-        }
-
-        .generate-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
 
         .loading {
             display: none;
             text-align: center;
-            padding: 40px;
+            padding: 60px;
         }
 
         .spinner {
@@ -213,112 +291,6 @@
             font-weight: 600;
         }
 
-        .result {
-            display: none;
-        }
-
-        .result-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 15px;
-            margin-bottom: 25px;
-            text-align: center;
-        }
-
-        .result-header h2 {
-            font-size: 1.8em;
-            margin-bottom: 10px;
-        }
-
-        .result-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid #e1e5ff;
-            transition: transform 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-3px);
-        }
-
-        .stat-value {
-            font-size: 1.6em;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 0.9em;
-            font-weight: 500;
-        }
-
-        .benefits-list {
-            margin-top: 30px;
-        }
-
-        .benefits-list h3 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.5em;
-            text-align: center;
-        }
-
-        .benefit-item {
-            background: linear-gradient(135deg, #ffffff, #f8f9ff);
-            border-left: 5px solid #667eea;
-            padding: 25px;
-            margin-bottom: 20px;
-            border-radius: 0 12px 12px 0;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-        }
-
-        .benefit-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
-        }
-
-        .benefit-store {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 1.1em;
-        }
-
-        .benefit-desc {
-            color: #555;
-            margin-bottom: 10px;
-            font-size: 1em;
-        }
-
-        .benefit-value {
-            color: #667eea;
-            font-weight: bold;
-            margin-bottom: 10px;
-            font-size: 1.1em;
-        }
-
-        .benefit-reason {
-            color: #666;
-            font-style: italic;
-            font-size: 0.95em;
-            padding: 10px;
-            background: rgba(102, 126, 234, 0.05);
-            border-radius: 8px;
-        }
-
         .error {
             background: linear-gradient(135deg, #fff5f5, #fed7d7);
             color: #c53030;
@@ -330,37 +302,30 @@
             font-weight: 500;
         }
 
-        .back-btn, .reset-btn {
+        .back-btn {
             background: linear-gradient(45deg, #ff6b6b, #ee5a24);
             color: white;
             border: none;
             padding: 12px 25px;
             border-radius: 8px;
             cursor: pointer;
-            margin: 10px;
+            margin: 20px 10px;
             font-weight: 500;
             transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
         }
 
-        .back-btn:hover, .reset-btn:hover {
+        .back-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
         }
 
-        .buttons-container {
-            text-align: center;
-            margin-top: 30px;
-        }
-
         @media (max-width: 768px) {
-            .pass-types {
+            .passes-grid {
                 grid-template-columns: 1fr;
             }
             
-            .result-stats {
-                grid-template-columns: 1fr 1fr;
-            }
-
             .header h1 {
                 font-size: 2em;
             }
@@ -368,15 +333,15 @@
             .main-container {
                 padding: 25px;
             }
-        }
 
-        @media (max-width: 1024px) {
-            .pass-types {
-                grid-template-columns: 1fr 1fr;
+            .pass-stats {
+                grid-template-columns: 1fr;
             }
-            
-            .pass-type {
-                padding: 20px;
+
+            .qr-modal-content {
+                margin: 10% auto;
+                padding: 30px;
+                width: 95%;
             }
         }
     </style>
@@ -384,331 +349,256 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎟️ 제물포GO 패스 생성기</h1>
-            <p>AI가 추천하는 인천 제물포의 맞춤형 관광 패스</p>
+            <h1>🎫 내 패스 이용하기</h1>
+            <p>생성한 제물포GO 패스를 확인하고 이용해보세요</p>
         </div>
 
-        <div class="main-container" id="form-card">
-            <form id="pass-form">
-                <div class="form-group">
-                    <label for="themes">🎯 관심 테마 선택 (여러 개 선택 가능)</label>
-                    <div class="themes-container" id="themes-container">
-                        <div class="theme-tag" data-theme="해산물">🦐 해산물</div>
-                        <div class="theme-tag" data-theme="카페">☕ 카페</div>
-                        <div class="theme-tag" data-theme="전통">🏮 전통</div>
-                        <div class="theme-tag" data-theme="레트로">📻 레트로</div>
-                        <div class="theme-tag" data-theme="조용함">🤫 조용함</div>
-                        <div class="theme-tag" data-theme="맛집">🍽️ 맛집</div>
-                        <div class="theme-tag" data-theme="디저트">🍰 디저트</div>
-                        <div class="theme-tag" data-theme="술집">🍻 술집</div>
-                        <div class="theme-tag" data-theme="문화">🎭 문화</div>
-                        <div class="theme-tag" data-theme="쇼핑">🛍️ 쇼핑</div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="request">💬 원하시는 것을 자유롭게 설명해주세요</label>
-                    <textarea 
-                        id="request" 
-                        name="request" 
-                        rows="4" 
-                        placeholder="예: 조용한 곳에서 책을 읽고 싶어요, 맛있는 해산물을 먹고 싶어요, 친구들과 재미있게 놀고 싶어요"
-                        required
-                    ></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label>💳 패스 타입 선택</label>
-                    <div class="pass-types" id="pass-types">
-                        <div class="pass-type selected" data-type="light">
-                            <h3>스탠다드 패스</h3>
-                            <div class="price">9,900원</div>
-                            <div class="description">기본적인 혜택들로 구성된 가성비 패스</div>
-                        </div>
-                        <div class="pass-type" data-type="premium">
-                            <h3>프리미엄 패스</h3>
-                            <div class="price">14,900원</div>
-                            <div class="description">다양한 혜택들로 구성된 풀 패키지 패스</div>
-                        </div>
-                        <div class="pass-type" data-type="citizen">
-                            <h3>시민 우대 패스</h3>
-                            <div class="price">7,000원</div>
-                            <div class="description">인천 시민을 위해 꼭 필요한 혜택들로 구성된 패스</div>
-                        </div>
-                    </div>
-                </div>
-
-                <button type="submit" class="generate-btn" id="generate-btn">
-                    🚀 나만의 패스 생성하기
-                </button>
-            </form>
-        </div>
-
-        <div class="main-container loading" id="loading">
-            <div class="spinner"></div>
-            <div class="loading-text">AI가 당신만의 맞춤형 패스를 생성하고 있습니다...</div>
-        </div>
-
-        <div class="main-container result" id="result">
-            <div class="result-header">
-                <h2>🎉 당신만의 제물포GO 패스가 완성되었습니다!</h2>
-                <p>AI가 분석한 최적의 관광 코스입니다</p>
+        <div class="main-container" id="main-content">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <div class="loading-text">패스 목록을 불러오는 중...</div>
             </div>
 
-            <div class="result-stats" id="result-stats">
-                <!-- 통계 정보가 여기에 표시됩니다 -->
+            <div id="no-passes" class="no-passes" style="display: none;">
+                <h3>🎯 아직 생성된 패스가 없습니다</h3>
+                <p>나만의 맞춤형 제물포GO 패스를 만들어보세요!</p>
+                <a href="/pass-generator" class="create-pass-btn">
+                    ✨ 첫 번째 패스 만들기
+                </a>
             </div>
 
-            <div class="benefits-list">
-                <h3>📋 포함된 혜택</h3>
-                <div id="benefits-container">
-                    <!-- 혜택 목록이 여기에 표시됩니다 -->
+            <div id="passes-container" style="display: none;">
+                <h2 style="color: #333; margin-bottom: 25px; text-align: center;">📋 내 패스 목록</h2>
+                <div class="passes-grid" id="passes-grid">
+                    <!-- 패스 카드들이 여기에 동적으로 추가됩니다 -->
                 </div>
             </div>
 
-            <div class="buttons-container">
-                <button class="reset-btn" onclick="resetForm()">🔄 다시 만들기</button>
-                <button class="back-btn" onclick="goBack()">🏠 메인으로</button>
+            <div class="error" id="error" style="display: none;">
+                <!-- 오류 메시지가 여기에 표시됩니다 -->
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="/main" class="back-btn">🏠 메인으로 돌아가기</a>
+                <a href="/pass-generator" class="back-btn" style="background: linear-gradient(45deg, #667eea, #764ba2);">➕ 새 패스 만들기</a>
             </div>
         </div>
+    </div>
 
-        <div class="error" id="error" style="display: none;">
-            <!-- 오류 메시지가 여기에 표시됩니다 -->
+    <!-- QR 코드 모달 -->
+    <div id="qr-modal" class="qr-modal">
+        <div class="qr-modal-content">
+            <span class="qr-close" onclick="closeQRModal()">&times;</span>
+            <h2 style="color: #667eea; margin-bottom: 20px;">📱 패스 QR 코드</h2>
+            <div class="qr-code-container" id="qr-code-container">
+                <!-- QR 코드 이미지가 여기에 표시됩니다 -->
+            </div>
+            <div class="qr-info">
+                <p><strong>사용법:</strong></p>
+                <p>• 가맹점에서 QR 코드를 보여주세요</p>
+                <p>• 혜택을 받고 즐거운 여행을 하세요!</p>
+            </div>
         </div>
     </div>
 
     <script>
-        let selectedThemes = [];
-        let selectedPassType = 'light';
+        let userPasses = [];
 
-        // 테마 선택 기능
-        document.querySelectorAll('.theme-tag').forEach(tag => {
-            tag.addEventListener('click', function() {
-                const theme = this.dataset.theme;
-                
-                if (this.classList.contains('selected')) {
-                    this.classList.remove('selected');
-                    selectedThemes = selectedThemes.filter(t => t !== theme);
-                } else {
-                    this.classList.add('selected');
-                    selectedThemes.push(theme);
-                }
-            });
+        // 페이지 로드 시 사용자 패스 목록 가져오기
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUserPasses();
         });
 
-        // 패스 타입 선택 기능
-        document.querySelectorAll('.pass-type').forEach(type => {
-            type.addEventListener('click', function() {
-                document.querySelectorAll('.pass-type').forEach(t => t.classList.remove('selected'));
-                this.classList.add('selected');
-                selectedPassType = this.dataset.type;
-            });
-        });
-
-        // 폼 제출 처리
-        document.getElementById('pass-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const request = document.getElementById('request').value.trim();
-            if (!request) {
-                showError('요청사항을 입력해주세요.');
-                return;
-            }
-
-            // UI 업데이트
-            document.getElementById('form-card').style.display = 'none';
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('result').style.display = 'none';
-
+        // 사용자 패스 목록 로드
+        async function loadUserPasses() {
             try {
-                // Flask API 호출
-                await generatePass(selectedThemes, request, selectedPassType);
-            } catch (error) {
-                console.error('패스 생성 실패:', error);
-                showError('패스 생성 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
-            }
-        });
-
-        // 패스 생성 API 호출 (실제 Flask 서버 사용)
-        async function generatePass(themes, request, passType) {
-            try {
-                const response = await fetch('http://localhost:5000/api/generate-pass', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        themes: themes,
-                        request: request,
-                        pass_type: passType
-                    })
-                });
-
+                // 세션에서 사용자 정보를 자동으로 가져옵니다
+                const response = await fetch('/api/user/passes');
                 const data = await response.json();
 
-                if (data.success) {
-                    showResult(data);
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.success && data.passes && data.passes.length > 0) {
+                    userPasses = data.passes;
+                    displayPasses(data.passes);
                 } else {
-                    showError(data.error || '패스 생성에 실패했습니다.');
+                    showNoPasses();
                 }
             } catch (error) {
-                console.error('API 호출 실패:', error);
-                // API 호출 실패 시 시뮬레이션 사용
-                await simulatePassGeneration(themes, request, passType);
+                console.error('패스 목록 로드 실패:', error);
+                document.getElementById('loading').style.display = 'none';
+                
+                // API 실패 시 데모 데이터 표시
+                const demoData = generateDemoData();
+                if (demoData.length > 0) {
+                    displayPasses(demoData);
+                } else {
+                    showNoPasses();
+                }
             }
         }
 
-        // 패스 생성 시뮬레이션 (백업용)
-        async function simulatePassGeneration(themes, request, passType) {
-            // 3초 로딩 시뮬레이션
-            await new Promise(resolve => setTimeout(resolve, 3000));
-
-            // 샘플 데이터 (실제로는 API 응답)
-            let passInfo, totalValue;
-            switch(passType) {
-                case 'light':
-                    passInfo = { name: '스탠다드 패스', price: 9900 };
-                    totalValue = 16000;
-                    break;
-                case 'premium':
-                    passInfo = { name: '프리미엄 패스', price: 14900 };
-                    totalValue = 28000;
-                    break;
-                case 'citizen':
-                    passInfo = { name: '시민 우대 패스', price: 7000 };
-                    totalValue = 12000;
-                    break;
-                default:
-                    passInfo = { name: '스탠다드 패스', price: 9900 };
-                    totalValue = 16000;
-            }
-            
-            const sampleData = {
-                success: true,
-                pass_info: {
-                    name: passInfo.name,
-                    price: passInfo.price,
-                    benefits_count: passType === 'citizen' ? 3 : (passType === 'light' ? 4 : 6),
-                    total_value: totalValue,
-                    value_ratio: Math.round((totalValue / passInfo.price) * 100),
-                    avg_synergy: 85.3
+        // 데모 데이터 생성
+        function generateDemoData() {
+            return [
+                {
+                    pass_id: 'DEMO001',
+                    created_at: '2024-12-19 14:30:00',
+                    pass_info: {
+                        name: '프리미엄 패스',
+                        price: 14900,
+                        benefits_count: 6,
+                        total_value: 28000
+                    },
+                    user_input: {
+                        themes: ['해산물', '카페'],
+                        request: '신선한 해산물과 분위기 좋은 카페를 찾고 있어요',
+                        pass_type: 'premium'
+                    },
+                    qr_code_path: '/qr_codes/pass_DEMO001.png'
                 },
-                recommendations: generateSampleRecommendations(passType, themes, request)
-            };
-
-            showResult(sampleData);
-        }
-
-        // 샘플 추천 생성
-        function generateSampleRecommendations(passType, themes, request) {
-            const sampleStores = [
-                { name: "바다향 해물찜", desc: "신선한 해산물 요리 20% 할인", value: 3000, reason: "해산물 테마와 맛집 요청에 최적화된 추천입니다." },
-                { name: "레트로 카페 온리", desc: "커피 1+1 이벤트", value: 4000, reason: "조용한 분위기와 레트로 감성을 동시에 만족시킵니다." },
-                { name: "제물포 전통시장", desc: "전통 간식 체험 쿠폰", value: 2500, reason: "전통 테마와 문화 체험을 위한 최고의 선택입니다." },
-                { name: "월미도 디저트샵", desc: "케이크 세트 30% 할인", value: 5000, reason: "디저트를 좋아하는 분들을 위한 특별한 혜택입니다." },
-                { name: "차이나타운 맛집", desc: "중화요리 코스 할인", value: 6000, reason: "다양한 맛집 경험을 위한 추천입니다." },
-                { name: "인천항 술집", desc: "전통주 시음 세트", value: 4500, reason: "술집 테마와 전통문화를 함께 즐길 수 있습니다." },
-                { name: "골목상권 카페", desc: "디저트 세트 할인", value: 3500, reason: "조용한 분위기에서 달콤한 시간을 보낼 수 있습니다." }
+                {
+                    pass_id: 'DEMO002',
+                    created_at: '2024-12-18 16:45:00',
+                    pass_info: {
+                        name: '스탠다드 패스',
+                        price: 9900,
+                        benefits_count: 4,
+                        total_value: 16000
+                    },
+                    user_input: {
+                        themes: ['전통', '맛집'],
+                        request: '전통적인 분위기에서 맛있는 음식을 즐기고 싶어요',
+                        pass_type: 'light'
+                    },
+                    qr_code_path: '/qr_codes/pass_DEMO002.png'
+                }
             ];
-
-            let count;
-            switch(passType) {
-                case 'light': count = 4; break;
-                case 'premium': count = 6; break; 
-                case 'citizen': count = 3; break;
-                default: count = 4;
-            }
-            
-            return sampleStores.slice(0, count).map((store, index) => ({
-                benefit_id: `B00${index + 1}`,
-                store_name: store.name,
-                benefit_desc: store.desc,
-                eco_value: store.value,
-                reason: store.reason
-            }));
         }
 
-        // 결과 표시
-        function showResult(data) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('result').style.display = 'block';
+        // 패스 없음 표시
+        function showNoPasses() {
+            document.getElementById('no-passes').style.display = 'block';
+            document.getElementById('passes-container').style.display = 'none';
+        }
 
-            // 통계 정보 렌더링
-            const statsContainer = document.getElementById('result-stats');
-            statsContainer.innerHTML = `
-                <div class="stat-card">
-                    <div class="stat-value">${data.pass_info.name}</div>
-                    <div class="stat-label">패스 타입</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${data.pass_info.price.toLocaleString()}원</div>
-                    <div class="stat-label">패스 가격</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${data.pass_info.total_value.toLocaleString()}원</div>
-                    <div class="stat-label">총 혜택 가치</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${data.pass_info.value_ratio}%</div>
-                    <div class="stat-label">가치 대비 효과</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${data.pass_info.benefits_count}개</div>
-                    <div class="stat-label">포함 혜택</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value">${data.pass_info.avg_synergy}점</div>
-                    <div class="stat-label">상생 점수</div>
-                </div>
-            `;
-
-            // 혜택 목록 렌더링
-            const benefitsContainer = document.getElementById('benefits-container');
-            benefitsContainer.innerHTML = '';
+        // 패스 목록 표시
+        function displayPasses(passes) {
+            document.getElementById('no-passes').style.display = 'none';
+            document.getElementById('passes-container').style.display = 'block';
             
-            data.recommendations.forEach((benefit, index) => {
-                const benefitElement = document.createElement('div');
-                benefitElement.className = 'benefit-item';
-                benefitElement.innerHTML = `
-                    <div class="benefit-store">${index + 1}. ${benefit.store_name}</div>
-                    <div class="benefit-desc">🎁 ${benefit.benefit_desc}</div>
-                    <div class="benefit-value">💰 가치: ${benefit.eco_value.toLocaleString()}원</div>
-                    <div class="benefit-reason">💡 ${benefit.reason}</div>
-                `;
-                benefitsContainer.appendChild(benefitElement);
+            const passesGrid = document.getElementById('passes-grid');
+            passesGrid.innerHTML = '';
+
+            passes.forEach(pass => {
+                const passCard = createPassCard(pass);
+                passesGrid.appendChild(passCard);
             });
         }
 
-        // 오류 표시
-        function showError(message) {
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('form-card').style.display = 'block';
-            document.getElementById('error').style.display = 'block';
-            document.getElementById('error').textContent = message;
+        // 패스 카드 생성
+        function createPassCard(pass) {
+            const card = document.createElement('div');
+            card.className = 'pass-card';
+            
+            const createdDate = new Date(pass.created_at).toLocaleDateString('ko-KR');
+            const valueRatio = Math.round((pass.pass_info.total_value / pass.pass_info.price) * 100);
+            
+            card.innerHTML = `
+                <div class="pass-header">
+                    <div class="pass-type">${pass.pass_info.name}</div>
+                    <div class="pass-date">${createdDate}</div>
+                </div>
+                
+                <div class="pass-info">
+                    <h3>패스 ID: ${pass.pass_id}</h3>
+                    
+                    <div class="pass-stats">
+                        <div class="stat-item">
+                            <div class="stat-value">${pass.pass_info.benefits_count}개</div>
+                            <div class="stat-label">포함 혜택</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${valueRatio}%</div>
+                            <div class="stat-label">가치 비율</div>
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(102, 126, 234, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                        <div style="color: #667eea; font-weight: 600; margin-bottom: 8px;">🎯 선택한 테마</div>
+                        <div style="color: #666; font-size: 0.9em;">${pass.user_input.themes.join(', ')}</div>
+                        <div style="color: #667eea; font-weight: 600; margin: 8px 0 5px 0;">💬 요청사항</div>
+                        <div style="color: #666; font-size: 0.9em;">${pass.user_input.request}</div>
+                    </div>
+                </div>
+                
+                <div class="pass-actions">
+                    <button class="view-qr-btn" onclick="showQRCode('${pass.pass_id}')">
+                        📱 QR 코드 보기
+                    </button>
+                    <a href="/pass/${pass.pass_id}" target="_blank" class="view-details-btn">
+                        📄 상세 보기
+                    </a>
+                </div>
+            `;
+            
+            return card;
         }
 
-        // 폼 리셋
-        function resetForm() {
-            document.getElementById('result').style.display = 'none';
-            document.getElementById('form-card').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
+        // QR 코드 모달 표시
+        async function showQRCode(passId) {
+            const modal = document.getElementById('qr-modal');
+            const container = document.getElementById('qr-code-container');
             
-            // 폼 초기화
-            document.getElementById('request').value = '';
-            selectedThemes = [];
-            selectedPassType = 'light';
+            modal.style.display = 'block';
+            container.innerHTML = '<div class="loading"><div class="spinner"></div><div class="loading-text">QR 코드 로딩 중...</div></div>';
             
-            // UI 초기화
-            document.querySelectorAll('.theme-tag').forEach(el => el.classList.remove('selected'));
-            document.querySelectorAll('.pass-type').forEach(el => el.classList.remove('selected'));
-            document.querySelector('.pass-type[data-type="light"]').classList.add('selected');
+            try {
+                // 패스 정보 가져오기
+                const pass = userPasses.find(p => p.pass_id === passId);
+                
+                if (pass && pass.qr_code_path) {
+                    // QR 코드 이미지 표시
+                    container.innerHTML = `
+                        <img src="${pass.qr_code_path}" alt="패스 QR 코드" class="qr-code-image" 
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUwIiBoZWlnaHQ9IjI1MCIgdmlld0JveD0iMCAwIDI1MCAyNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTAiIGhlaWdodD0iMjUwIiBmaWxsPSIjRjNGNEY2Ii8+CjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjIzMCIgaGVpZ2h0PSIyMzAiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNEMUQ1REIiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSIxMjUiIHk9IjEyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY3RUVBIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5RUiDsvZTrk5w8L3RleHQ+Cjx0ZXh0IHg9IjEyNSIgeT0iMTQ1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM5Q0E0QUYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuyXhOydjCDsl4bsnYw8L3RleHQ+Cjwvc3ZnPgo='"
+                        />
+                        <div style="margin-top: 15px; color: #667eea; font-weight: 600;">
+                            패스 ID: ${passId}
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <div style="padding: 40px; color: #666;">
+                            <div style="font-size: 3em; margin-bottom: 15px;">😅</div>
+                            <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px;">QR 코드를 찾을 수 없습니다</div>
+                            <div style="font-size: 0.9em;">패스가 아직 완전히 생성되지 않았을 수 있습니다.</div>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('QR 코드 로드 실패:', error);
+                container.innerHTML = `
+                    <div style="padding: 40px; color: #c53030;">
+                        <div style="font-size: 3em; margin-bottom: 15px;">❌</div>
+                        <div style="font-size: 1.1em; font-weight: 600;">QR 코드 로드 실패</div>
+                        <div style="font-size: 0.9em; margin-top: 10px;">잠시 후 다시 시도해주세요.</div>
+                    </div>
+                `;
+            }
         }
 
-        // 메인으로 돌아가기
-        function goBack() {
-            window.close(); // 새 탭으로 열린 경우 닫기
-            // 또는 parent.location.href = 'main.html'; // 같은 탭에서 열린 경우
+        // QR 코드 모달 닫기
+        function closeQRModal() {
+            document.getElementById('qr-modal').style.display = 'none';
+        }
+
+        // 모달 외부 클릭 시 닫기
+        window.onclick = function(event) {
+            const modal = document.getElementById('qr-modal');
+            if (event.target == modal) {
+                closeQRModal();
+            }
         }
     </script>
 </body>
