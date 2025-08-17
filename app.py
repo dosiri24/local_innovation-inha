@@ -50,7 +50,7 @@ def auth_page():
     """인증 페이지 - 로그인/회원가입 선택"""
     if 'user_logged_in' in session:
         return redirect(url_for('main_page'))
-    return render_template('auth.html')
+    return render_template('index.html')
 
 @app.route('/main')
 @login_required
@@ -62,7 +62,7 @@ def main_page():
 @login_required
 def pass_generator():
     """패스 생성 페이지 - 기존 인덱스 페이지"""
-    return render_template('index.html')
+    return render_template('auth.html')
 
 # 로그인/회원가입 API
 @app.route('/api/login', methods=['POST'])
@@ -388,4 +388,7 @@ if __name__ == '__main__':
     
     # 개발 모드에서 실행
     port = int(os.environ.get('PORT', 8080))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=False)
+else:
+    # 프로덕션 모드 (Gunicorn)에서 실행
+    initialize_data()
