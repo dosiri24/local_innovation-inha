@@ -17,11 +17,36 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)  # CORS 허용
 
-# 세션 설정
+# 세션 설정 - Google App Engine 읽기 전용 파일시스템 문제 해결
 app.config['SECRET_KEY'] = secrets.token_hex(16)
-app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
-Session(app)
+
+# 환경에 따른 세션 설정
+is_production = (
+    os.environ.get('GAE_ENV', '').startswith('standard') or 
+    os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+    'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+)
+
+print(f"[환경 감지] Production 환경: {is_production}")
+
+if is_production:
+    # 프로덕션 환경: Flask의 기본 세션 사용 (서버 사이드 대신 클라이언트 사이드)
+    print("[세션] 프로덕션 환경: 클라이언트 사이드 세션 사용")
+    app.config['SESSION_COOKIE_SECURE'] = False  # HTTPS 강제 해제 (테스트용)
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = None
+    # Flask-Session 초기화 하지 않음 (기본 Flask 세션 사용)
+else:
+    # 개발 환경: 파일시스템 세션 사용
+    print("[세션] 개발 환경: 파일시스템 세션 사용")
+    app.config['SESSION_TYPE'] = 'filesystem'
+    app.config['SESSION_PERMANENT'] = False
+    app.config['SESSION_USE_SIGNER'] = True
+    app.config['SESSION_KEY_PREFIX'] = 'jemulpogo:'
+    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+    Session(app)
 
 # 전역 데이터 저장
 stores_data = []
@@ -39,7 +64,10 @@ def initialize_data():
 def login_required(f):
     """로그인이 필요한 페이지에 적용할 데코레이터"""
     def decorated_function(*args, **kwargs):
-        if 'user_logged_in' not in session:
+        # 세션 검증 강화
+        if 'user_logged_in' not in session or not session.get('user_logged_in'):
+            return redirect(url_for('auth_page'))
+        if 'user_email' not in session or not session.get('user_email'):
             return redirect(url_for('auth_page'))
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
@@ -48,7 +76,8 @@ def login_required(f):
 @app.route('/')
 def auth_page():
     """인증 페이지 - 로그인/회원가입 선택"""
-    if 'user_logged_in' in session:
+    # 세션 확인을 더 강화
+    if 'user_logged_in' in session and session.get('user_logged_in') == True:
         return redirect(url_for('main_page'))
     return render_template('index.html')
 
@@ -56,6 +85,10 @@ def auth_page():
 @login_required
 def main_page():
     """메인 페이지 - 로그인 후 접근 가능"""
+    # 추가 세션 검증
+    if not session.get('user_logged_in') or not session.get('user_email'):
+        session.clear()
+        return redirect(url_for('auth_page'))
     return render_template('main.html')
 
 @app.route('/pass-generator')
@@ -73,19 +106,41 @@ def login_api():
         email = data.get('email', '').strip()
         password = data.get('password', '').strip()
         
+        print(f"[로그인 시도] 이메일: {email}")
+        
         if not email or not password:
             return jsonify({'error': '이메일과 비밀번호를 입력해주세요.'}), 400
         
         # 간단한 로그인 검증 (실제 프로덕션에서는 데이터베이스와 연동)
         # 여기서는 데모용으로 간단히 구현
         if email and password:  # 이메일과 비밀번호가 있으면 로그인 성공
+            # 세션 설정을 더 명확하게
+            session.clear()  # 기존 세션 정리
             session['user_logged_in'] = True
             session['user_email'] = email
-            return jsonify({'success': True, 'message': '로그인 성공!'})
+            session.permanent = True  # 세션을 영구적으로 설정
+            
+            print(f"[로그인 성공] 세션 설정 완료: {session}")
+            
+            response = jsonify({
+                'success': True, 
+                'message': '로그인 성공!',
+                'redirect_url': '/main',  # 리다이렉트 URL 추가
+                'session_id': request.cookies.get('session', 'no-session')
+            })
+            
+            # 추가 쿠키 설정
+            response.set_cookie('user_logged_in', 'true', 
+                              secure=False, 
+                              httponly=False,
+                              samesite='Lax')
+            
+            return response
         else:
             return jsonify({'error': '잘못된 이메일 또는 비밀번호입니다.'}), 401
             
     except Exception as e:
+        print(f"[로그인 오류] {str(e)}")
         return jsonify({'error': f'로그인 중 오류가 발생했습니다: {str(e)}'}), 500
 
 @app.route('/api/signup', methods=['POST'])
@@ -108,9 +163,16 @@ def signup_api():
         
         # 간단한 회원가입 처리 (실제 프로덕션에서는 데이터베이스에 저장)
         # 여기서는 데모용으로 바로 로그인 처리
+        session.clear()  # 기존 세션 정리
         session['user_logged_in'] = True
         session['user_email'] = email
-        return jsonify({'success': True, 'message': '회원가입 성공!'})
+        session.permanent = True  # 세션을 영구적으로 설정
+        
+        return jsonify({
+            'success': True, 
+            'message': '회원가입 성공!',
+            'redirect_url': '/main'  # 리다이렉트 URL 추가
+        })
         
     except Exception as e:
         return jsonify({'error': f'회원가입 중 오류가 발생했습니다: {str(e)}'}), 500
@@ -120,6 +182,25 @@ def logout_api():
     """로그아웃 API"""
     session.clear()
     return jsonify({'success': True, 'message': '로그아웃되었습니다.'})
+
+@app.route('/api/session-check', methods=['GET'])
+def session_check_api():
+    """세션 상태 확인 API"""
+    user_logged_in = session.get('user_logged_in', False)
+    user_email = session.get('user_email')
+    is_logged_in = user_logged_in and user_email
+    
+    print(f"[세션 확인] user_logged_in: {user_logged_in}")
+    print(f"[세션 확인] user_email: {user_email}")
+    print(f"[세션 확인] 전체 세션: {dict(session)}")
+    print(f"[세션 확인] 쿠키: {dict(request.cookies)}")
+    
+    return jsonify({
+        'logged_in': bool(is_logged_in),
+        'user_email': user_email if is_logged_in else None,
+        'session_data': dict(session),
+        'cookies': dict(request.cookies)
+    })
 
 # 추가 페이지 라우팅 (모두 로그인 필요)
 @app.route('/intro')

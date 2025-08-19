@@ -214,7 +214,8 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
-                        }
+                        },
+                        credentials: 'include'
                     });
                     
                     const result = await response.json();
@@ -228,5 +229,36 @@
                 }
             }
         }
+        
+        // 페이지 로드 시 세션 확인
+        window.addEventListener('DOMContentLoaded', async function() {
+            try {
+                console.log('[메인 페이지] 세션 상태 확인 시작');
+                const response = await fetch('/api/session-check', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const sessionData = await response.json();
+                    console.log('[메인 페이지] 세션 상태:', sessionData);
+                    
+                    // 로그인되지 않았다면 인덱스 페이지로 이동
+                    if (!sessionData.logged_in) {
+                        console.log('[메인 페이지] 세션 없음, 인덱스 페이지로 이동');
+                        alert('로그인이 필요합니다.');
+                        window.location.href = '/';
+                    } else {
+                        console.log('[메인 페이지] 로그인 상태 확인됨:', sessionData.user_email);
+                    }
+                } else {
+                    console.log('[메인 페이지] 세션 확인 실패, 인덱스 페이지로 이동');
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                console.log('[메인 페이지] 세션 확인 오류:', error.message);
+                window.location.href = '/';
+            }
+        });
     </script>
 </html>

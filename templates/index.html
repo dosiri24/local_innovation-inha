@@ -158,31 +158,146 @@
     </div>
 
     <script>
+        // 로그 함수 추가
+        function log(message, data = null) {
+            console.log(`[제물포GO] ${message}`, data || '');
+        }
+        
         async function demoLogin() {
             try {
+                log('데모 로그인 시작');
+                
+                // 로그인 전 기존 쿠키/세션 정리
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                
+                const loginData = {
+                    email: 'demo@jemulpogo.com',
+                    password: 'demo123'
+                };
+                
+                log('로그인 요청 전송', loginData);
+                
                 const response = await fetch('/api/login', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        email: 'demo@jemulpogo.com',
-                        password: 'demo123'
-                    })
+                    body: JSON.stringify(loginData),
+                    credentials: 'include'  // same-origin에서 include로 변경
                 });
                 
+                log('응답 상태', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
+                log('응답 데이터', result);
                 
                 if (result.success) {
                     alert('데모 계정으로 로그인되었습니다!');
-                    window.location.href = '/main';
+                    
+                    // 추가 쿠키 설정 (백업)
+                    document.cookie = 'user_logged_in=true; path=/; samesite=lax';
+                    
+                    // 페이지 이동을 여러 방법으로 시도
+                    const redirectUrl = result.redirect_url || '/main';
+                    log('페이지 이동 시작', redirectUrl);
+                    
+                    // 방법 1: 즉시 이동
+                    try {
+                        window.location.href = redirectUrl;
+                        log('방법 1: href 설정 완료');
+                    } catch (e) {
+                        log('방법 1 실패', e.message);
+                    }
+                    
+                    // 방법 2: replace 사용 (히스토리 대체)
+                    setTimeout(() => {
+                        try {
+                            window.location.replace(redirectUrl);
+                            log('방법 2: replace 실행');
+                        } catch (e) {
+                            log('방법 2 실패', e.message);
+                        }
+                    }, 100);
+                    
+                    // 방법 3: assign 사용
+                    setTimeout(() => {
+                        try {
+                            window.location.assign(redirectUrl);
+                            log('방법 3: assign 실행');
+                        } catch (e) {
+                            log('방법 3 실패', e.message);
+                        }
+                    }, 200);
+                    
+                    // 방법 4: 강제 새로고침 후 이동
+                    setTimeout(() => {
+                        try {
+                            sessionStorage.setItem('pending_redirect', redirectUrl);
+                            window.location.reload();
+                            log('방법 4: 새로고침 후 이동');
+                        } catch (e) {
+                            log('방법 4 실패', e.message);
+                        }
+                    }, 500);
+                    
                 } else {
-                    alert('로그인 실패: ' + result.error);
+                    alert('로그인 실패: ' + (result.error || '알 수 없는 오류'));
+                    log('로그인 실패', result.error);
                 }
             } catch (error) {
+                console.error('로그인 오류:', error);
                 alert('로그인 중 오류가 발생했습니다: ' + error.message);
+                log('로그인 예외', error.message);
             }
         }
+        
+        // 페이지 로드 시 처리
+        window.addEventListener('DOMContentLoaded', async function() {
+            log('페이지 로드 완료');
+            
+            // 새로고침 후 리다이렉트 처리
+            const pendingRedirect = sessionStorage.getItem('pending_redirect');
+            if (pendingRedirect) {
+                log('새로고침 후 리다이렉트 감지', pendingRedirect);
+                sessionStorage.removeItem('pending_redirect');
+                setTimeout(() => {
+                    window.location.href = pendingRedirect;
+                }, 100);
+                return;
+            }
+            
+            try {
+                // 세션 상태 확인 API 호출
+                log('세션 상태 확인 시작');
+                const response = await fetch('/api/session-check', {
+                    method: 'GET',
+                    credentials: 'include'
+                });
+                
+                if (response.ok) {
+                    const sessionData = await response.json();
+                    log('세션 상태', sessionData);
+                    
+                    // 이미 로그인되어 있다면 메인 페이지로 리다이렉트
+                    if (sessionData.logged_in) {
+                        log('이미 로그인됨, 메인 페이지로 이동');
+                        window.location.href = '/main';
+                    }
+                } else {
+                    log('세션 확인 실패', response.status);
+                }
+            } catch (error) {
+                // 오류는 무시 (로그인되지 않은 상태)
+                log('세션 확인 오류 (정상)', error.message);
+            }
+        });
     </script>
 </body>
 </html>
