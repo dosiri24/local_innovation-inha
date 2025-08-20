@@ -6,14 +6,83 @@
 # For more information, run:
 #   $ gcloud topic gcloudignore
 #
+
 .gcloudignore
+
 # If you would like to upload your .git directory, .gitignore file or files
-# from your .gitignore file, remove the corresponding line
-# below:
+# from your .gitignore file, remove the corresponding line below:
 .git
 .gitignore
 
 # Python pycache:
 __pycache__/
+
 # Ignored by the build system
 /setup.cfg
+
+# 환경 변수 파일
+.env
+.env.*
+
+# Python 관련
+*.py[co]
+*.pyo
+*.pyd
+.Python
+
+# 가상 환경
+venv/
+.venv/
+env/
+ENV/
+
+# 개발 도구
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 백업 및 임시 파일
+*.bak
+*.tmp
+*.temp
+*~
+#*#
+
+# 테스트 및 문서
+tests/
+test_*.py
+*_test.py
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# 문서
+README.md
+docs/
+
+# OS 관련
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 로그 파일
+*.log
+
+# 제물포GO 관련 임시 파일
+saved_passes/
+qr_codes/
+
+# 개발용 Flask 세션
+flask_session/
+
+# 빌드 결과물
+build/
+dist/
+*.egg-info/

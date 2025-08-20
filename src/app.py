@@ -41,11 +41,12 @@ def create_app():
     print(f"[환경 감지] Production 환경: {is_production}")
 
     if is_production:
-        # 프로덕션 환경: Flask의 기본 세션 사용 (서버 사이드 대신 클라이언트 사이드)
+        # 프로덕션 환경: Flask의 기본 세션 사용 (클라이언트 사이드)
         print("[세션] 프로덕션 환경: 클라이언트 사이드 세션 사용")
-        app.config['SESSION_COOKIE_SECURE'] = False  # HTTPS 강제 해제 (테스트용)
+        app.config['SESSION_COOKIE_SECURE'] = False  # HTTP에서도 작동하도록 설정
         app.config['SESSION_COOKIE_HTTPONLY'] = True
         app.config['SESSION_COOKIE_SAMESITE'] = None
+        app.config['SESSION_PERMANENT'] = False
         # Flask-Session 초기화 하지 않음 (기본 Flask 세션 사용)
     else:
         # 개발 환경: 파일시스템 세션 사용
@@ -57,6 +58,10 @@ def create_app():
         app.config['SESSION_COOKIE_SECURE'] = False
         app.config['SESSION_COOKIE_HTTPONLY'] = True
         app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+        # 파일시스템 세션 디렉토리를 임시 디렉토리로 설정
+        session_dir = os.path.join(parent_dir, 'flask_session')
+        os.makedirs(session_dir, exist_ok=True)
+        app.config['SESSION_FILE_DIR'] = session_dir
         Session(app)
 
     # 라우트 등록
@@ -66,26 +71,29 @@ def create_app():
 
 def initialize_data():
     """애플리케이션 시작 시 데이터 로드"""
-    stores_data = load_stores()
-    benefits_data = load_benefits()
-    
-    if not stores_data or not benefits_data:
-        print("[오류] 데이터 로드 실패")
-    else:
-        print(f"[완료] {len(stores_data)}개 상점, {len(benefits_data)}개 혜택 로드됨")
-    
-    return stores_data, benefits_data
+    try:
+        stores_data = load_stores()
+        benefits_data = load_benefits()
+        
+        if not stores_data or not benefits_data:
+            print("[경고] 일부 데이터 로드 실패")
+            return [], []
+        else:
+            print(f"[완료] {len(stores_data)}개 상점, {len(benefits_data)}개 혜택 로드됨")
+        
+        return stores_data, benefits_data
+    except Exception as e:
+        print(f"[오류] 데이터 초기화 실패: {str(e)}")
+        return [], []
 
-# Flask 앱 생성
-app = create_app()
+# Flask 앱 생성 함수만 제공 (중복된 앱 인스턴스 생성 제거)
+# 앱 인스턴스는 main.py에서만 생성
 
 if __name__ == '__main__':
-    # 데이터 초기화
+    # 개발 모드에서만 실행
+    app = create_app()
     initialize_data()
     
     # 개발 모드에서 실행
     port = int(os.environ.get('PORT', 8080))
     app.run(host='0.0.0.0', port=port, debug=False)
-else:
-    # 프로덕션 모드 (Gunicorn)에서 실행
-    initialize_data()

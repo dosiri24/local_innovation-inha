@@ -24,6 +24,20 @@ def login_required(f):
 def register_routes(app):
     """Flask 앱에 모든 라우트 등록"""
     
+    # 헬스체크 엔드포인트
+    @app.route('/health')
+    def health_check():
+        """앱 상태 확인용 헬스체크 엔드포인트"""
+        return jsonify({
+            'status': 'healthy',
+            'message': '제물포GO 패스 애플리케이션이 정상적으로 실행 중입니다.'
+        }), 200
+    
+    @app.route('/_ah/health')
+    def gae_health_check():
+        """Google App Engine 헬스체크 엔드포인트"""
+        return 'OK', 200
+    
     # 기본 페이지 라우트
     @app.route('/')
     def auth_page():
@@ -512,9 +526,3 @@ def register_routes(app):
         except Exception as e:
             print(f"[오류] QR 코드 조회 중 에러: {e}")
             return jsonify({'error': f'QR 코드 조회 중 오류가 발생했습니다: {str(e)}'}), 500
-
-    # 헬스 체크
-    @app.route('/health')
-    def health_check():
-        """헬스 체크 엔드포인트"""
-        return jsonify({'status': 'healthy', 'message': '제물포GO 서버가 정상 작동 중입니다.'})
