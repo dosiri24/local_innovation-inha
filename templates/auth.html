@@ -540,6 +540,8 @@
 
         // 패스 생성 API 호출 (실제 Flask 서버 사용)
         async function generatePass(themes, request, passType) {
+            const startTime = Date.now();
+            
             try {
                 const response = await fetch('/api/generate-pass', {
                     method: 'POST',
@@ -547,13 +549,24 @@
                         'Content-Type': 'application/json',
                     },
                     body: JSON.stringify({
-                        themes: themes,
-                        request: request,
-                        pass_type: passType
+                        budget: '보통',
+                        interests: themes,
+                        dietary_restrictions: [],
+                        group_size: 2,
+                        duration: '반나절',
+                        transportation: '도보',
+                        pass_type: passType,
+                        theme: themes[0] || 'food'
                     })
                 });
 
                 const data = await response.json();
+                
+                // 최소 2초간 로딩 화면 표시
+                const elapsedTime = Date.now() - startTime;
+                const remainingTime = Math.max(2000 - elapsedTime, 0);
+                
+                await new Promise(resolve => setTimeout(resolve, remainingTime));
 
                 if (data.success) {
                     showResult(data);
