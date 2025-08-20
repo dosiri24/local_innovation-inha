@@ -88,12 +88,6 @@ def register_routes(app):
         """놀이 테마 페이지"""
         return render_template('play.html')
 
-    @app.route('/benef')
-    @login_required
-    def benef():
-        """혜택 페이지"""
-        return render_template('benef.html')
-
     @app.route('/login')
     def login():
         """로그인 페이지"""
