@@ -1,24 +1,372 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
     <head>
         <meta charset="utf-8">
-        <title>제물포GO 이용안내서</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>제물포GO 사용법</title>
         
         <style>
-          *{
+          * {
               text-align: center;
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
           }
 
-          #title{
-            font-size: 40px;
+          body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
           }
-          
+
+          #title {
+            font-size: 48px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin: 30px 0;
+            letter-spacing: 2px;
+          }
+
+          /* 메인 컨테이너 */
+          .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+          }
+
+          /* 구분선 스타일 */
+          hr {
+            border: none;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            margin: 30px 0;
+          }
+
+          /* 섹션 제목 */
+          .section-title {
+            font-size: 32px;
+            color: #667eea;
+            margin: 40px 0 30px 0;
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+          }
+
+          /* 인트로 텍스트 */
+          .intro-text {
+            font-size: 18px;
+            color: #555;
+            margin: 20px 0;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+
+          .highlight {
+            color: #667eea;
+            font-weight: 600;
+          }
+
+          /* 단계별 가이드 컨테이너 */
+          .steps-container {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+            margin: 40px 0;
+          }
+
+          .step-item {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+          }
+
+          .step-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+          }
+
+          .step-item:nth-child(even) {
+            flex-direction: row-reverse;
+          }
+
+          .step-number {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 30px;
+            flex-shrink: 0;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+          }
+
+          .step-image {
+            flex-shrink: 0;
+            margin: 0 30px;
+          }
+
+          .step-image img {
+            width: auto;
+            height: 100px;
+            max-width: 120px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+            object-fit: contain;
+            background: white;
+            padding: 10px;
+          }
+
+          .step-image img:hover {
+            transform: scale(1.1);
+          }
+
+          .step-content {
+            flex: 1;
+            text-align: left;
+            padding: 0 20px;
+          }
+
+          .step-item:nth-child(even) .step-content {
+            text-align: right;
+          }
+
+          .step-title {
+            font-size: 24px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 15px;
+          }
+
+          .step-description {
+            font-size: 16px;
+            color: #666;
+            line-height: 1.8;
+          }
+
+          .step-tip {
+            background: rgba(102, 126, 234, 0.1);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 10px 10px 0;
+            font-style: italic;
+            color: #555;
+          }
+
+          /* 돌아가기 버튼 */
+          .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #667eea;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-decoration: none;
+          }
+
+          .back-button:hover {
+            background: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+          }
+
+          /* CTA 버튼 */
+          .cta-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 30px 0;
+            box-shadow: 0 8px 15px rgba(255, 107, 107, 0.3);
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+          }
+
+          .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(255, 107, 107, 0.4);
+            background: linear-gradient(45deg, #ee5a24, #ff6b6b);
+          }
+
+          /* 반응형 디자인 */
+          @media (max-width: 768px) {
+            #title {
+              font-size: 36px;
+            }
+            
+            .main-container {
+              margin: 10px;
+              padding: 20px;
+            }
+            
+            .step-item {
+              flex-direction: column !important;
+              text-align: center;
+              padding: 20px;
+            }
+            
+            .step-content {
+              text-align: center !important;
+              padding: 20px 0 0 0;
+            }
+            
+            .step-number,
+            .step-image {
+              margin: 10px 0;
+            }
+
+            .step-image img {
+              width: auto;
+              height: 80px;
+              max-width: 100px;
+            }
+
+            .back-button {
+              position: static;
+              margin: 20px auto;
+              display: block;
+              width: fit-content;
+            }
+          }
         </style>
-
     </head>
     <body>
-        <p id="title"><strong>제물포GO 여행패스</strong></p>
-        <hr>
+        <a href="/main" class="back-button">← 메인으로</a>
         
+        <p id="title"><strong>📚 제물포GO 사용법</strong></p>
+        
+        <div class="main-container">
+            <h1 class="section-title">제물포GO 패스 생성 가이드</h1>
+            
+            <p class="intro-text">
+                <span class="highlight">제물포GO</span>를 처음 사용하시나요? 걱정하지 마세요!<br>
+                단 4단계로 나만의 맞춤형 여행 패스를 쉽게 만들 수 있습니다.
+            </p>
+            
+            <hr>
+
+            <div class="steps-container">
+                <!-- 1단계: 테마 선택 -->
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-image">
+                        <img src="/static/images/button.png" alt="테마 선택 버튼">
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">🎯 관심 테마 선택하기</h3>
+                        <p class="step-description">
+                            먼저 여러분의 취향에 맞는 <strong>테마를 선택</strong>해주세요.<br>
+                            해산물, 카페, 전통, 레트로, 조용함 등 다양한 테마 중에서<br>
+                            <strong>여러 개를 동시에 선택</strong>할 수 있습니다.
+                        </p>
+                        <div class="step-tip">
+                            💡 팁: 여러 테마를 조합하면 더 다양하고 재미있는 코스를 만날 수 있어요!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2단계: 요청사항 작성 -->
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-image">
+                        <img src="/static/images/write.png" alt="요청사항 작성">
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">✍️ 상세 요청사항 작성하기</h3>
+                        <p class="step-description">
+                            AI가 더 정확한 추천을 할 수 있도록<br>
+                            <strong>자세한 요청사항을 작성</strong>해주세요.<br>
+                            예: "친구와 함께 맛있는 음식을 먹으며 사진 찍기 좋은 곳을 가고 싶어요"
+                        </p>
+                        <div class="step-tip">
+                            💡 팁: 구체적으로 작성할수록 더 만족스러운 여행 코스를 받을 수 있어요!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3단계: 패스 종류 선택 -->
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-image">
+                        <img src="/static/images/option.png" alt="패스 옵션 선택">
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">🎫 패스 종류 선택하기</h3>
+                        <p class="step-description">
+                            예산과 원하는 혜택에 따라 <strong>패스 종류를 선택</strong>하세요.<br>
+                            • <strong>라이트 패스</strong>: 기본적인 할인 혜택<br>
+                            • <strong>프리미엄 패스</strong>: 더 많은 혜택과 특별 서비스<br>
+                            • <strong>시민 패스</strong>: 지역 주민을 위한 특가 혜택
+                        </p>
+                        <div class="step-tip">
+                            💡 팁: 각 패스마다 포함된 혜택과 가격이 다르니 꼼꼼히 비교해보세요!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4단계: 패스 생성 -->
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-image">
+                        <img src="/static/images/play.png" alt="패스 생성 버튼">
+                    </div>
+                    <div class="step-content">
+                        <h3 class="step-title">🚀 패스 생성하기</h3>
+                        <p class="step-description">
+                            모든 설정이 완료되었다면 <strong>이 버튼을 클릭</strong>하세요!<br>
+                            AI가 여러분만을 위한 <strong>맞춤형 여행 패스</strong>를 생성합니다.<br>
+                            QR 코드가 포함된 디지털 패스를 받아보세요.
+                        </p>
+                        <div class="step-tip">
+                            💡 팁: 생성된 패스는 QR 코드로 제휴 가게에서 바로 사용할 수 있어요!
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr>
+
+            <h2 class="section-title">🎉 이제 시작해보세요!</h2>
+            
+            <p class="intro-text">
+                준비가 되셨나요? 지금 바로 <span class="highlight">나만의 제물포GO 패스</span>를 만들어보세요!<br>
+                제물포의 숨겨진 매력을 발견하는 특별한 여행이 시작됩니다.
+            </p>
+            
+            <a href="/pass-generator" class="cta-button">🎯 패스 만들러 가기</a>
+            
+            <p class="intro-text" style="margin-top: 30px; font-style: italic; color: #888;">
+                "더 궁금한 점이 있으시면 언제든지 문의해주세요!"
+            </p>
+        </div>
     </body>
 </html>
