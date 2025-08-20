@@ -264,12 +264,12 @@
         </div>
 
         <div class="signup-link">
-            <p>아직 계정이 없으신가요? <a href="memberIn.html">회원가입하기</a></p>
+            <p>아직 계정이 없으신가요? <a href="/member">회원가입하기</a></p>
         </div>
     </div>
 
-    <!-- Firebase SDK 초기화 코드 (모든 페이지에 필요) -->
-    <script type="module" src="auth.js"></script>
+    <!-- 인증 스크립트 로드 -->
+    <script src="/static/js/auth.js"></script>
     
     <script>
         // 폼 제출 이벤트 처리
@@ -280,20 +280,26 @@
             const password = document.getElementById('login-password').value;
             const loginBtn = document.getElementById('login-btn');
             
+            if (!email || !password) {
+                showMessage('이메일과 비밀번호를 모두 입력하세요.', 'error');
+                return;
+            }
+            
             // 버튼 비활성화
             loginBtn.disabled = true;
             loginBtn.textContent = '로그인 중...';
             
-            // 기존 logIn 함수 호출
+            // logIn 함수 호출 (auth.js에서 정의됨)
             if (typeof logIn === 'function') {
-                logIn();
-            } else {
-                // logIn 함수가 없는 경우 기본 처리
-                setTimeout(() => {
-                    showMessage('로그인 기능을 구현 중입니다.', 'error');
+                logIn().finally(() => {
+                    // 로그인 완료 후 버튼 다시 활성화
                     loginBtn.disabled = false;
                     loginBtn.textContent = '🚀 로그인';
-                }, 1000);
+                });
+            } else {
+                showMessage('로그인 기능을 불러올 수 없습니다.', 'error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = '🚀 로그인';
             }
         });
 
@@ -314,11 +320,11 @@
                 errorDiv.style.display = 'block';
             }
             
-            // 3초 후 메시지 숨기기
+            // 5초 후 메시지 숨기기
             setTimeout(() => {
                 errorDiv.style.display = 'none';
                 successDiv.style.display = 'none';
-            }, 3000);
+            }, 5000);
         }
 
         // Enter 키로 로그인

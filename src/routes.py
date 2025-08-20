@@ -100,15 +100,23 @@ def register_routes(app):
     def view_pass(pass_id):
         """QR 코드 스캔 시 보여줄 패스 상세 페이지"""
         try:
+            print(f"[패스 상세] 요청된 패스 ID: {pass_id}")
             pass_data = load_pass_from_file(pass_id)
             
             if not pass_data:
+                print(f"[패스 상세] 패스를 찾을 수 없음: {pass_id}")
                 return render_template('pass_not_found.html', pass_id=pass_id), 404
+            
+            print(f"[패스 상세] 로드된 패스 데이터: pass_id={pass_data.pass_id}, type={type(pass_data)}")
+            print(f"[패스 상세] 패스 타입: {pass_data.pass_type}, 테마: {pass_data.theme}")
+            print(f"[패스 상세] 매장 수: {len(pass_data.stores)}, 혜택 수: {len(pass_data.benefits)}")
             
             return render_template('pass_detail.html', pass_data=pass_data)
             
         except Exception as e:
             print(f"[오류] 패스 페이지 조회 중 에러: {e}")
+            import traceback
+            traceback.print_exc()
             return render_template('error.html', error=str(e)), 500
 
     # 정적 파일 제공
@@ -293,11 +301,7 @@ def register_routes(app):
                 pass_type_mapping = {
                     'light': PassType.LIGHT,
                     'premium': PassType.PREMIUM,
-                    'citizen': PassType.CITIZEN,
-                    'taste': PassType.TASTE,
-                    'beauty': PassType.BEAUTY,
-                    '맛있는 동인천': PassType.TASTE,
-                    '아름다운 동인천': PassType.BEAUTY
+                    'citizen': PassType.CITIZEN
                 }
                 
                 # Theme 매핑
@@ -325,6 +329,9 @@ def register_routes(app):
                 pass_type = pass_type_mapping.get(pass_type_str.lower(), PassType.LIGHT)
                 theme = theme_mapping.get(theme_str.lower(), Theme.FOOD)
                 
+                print(f"[패스 타입 변환] 입력: {pass_type_str} -> {pass_type} (값: {pass_type.value})")
+                print(f"[테마 변환] 입력: {theme_str} -> {theme} (값: {theme.value})")
+                
             except Exception as e:
                 print(f"Enum 변환 오류: {e}")
                 # 기본값 사용
@@ -337,20 +344,66 @@ def register_routes(app):
             if not generated_pass:
                 return jsonify({'error': '조건에 맞는 패스를 생성할 수 없습니다.'}), 400
             
-            # 응답 데이터 구성
+            # 혜택 데이터에서 store_id를 실제 상점명으로 변환
+            from services import load_stores_raw
+            stores_raw = load_stores_raw()
+            store_id_to_name = {store['id']: store['name'] for store in stores_raw}
+            
+            # 혜택 정보를 프론트엔드 형식으로 변환
+            recommendations = []
+            enhanced_benefits = []
+            
+            for benefit in generated_pass.benefits:
+                store_name = store_id_to_name.get(benefit.store_name, benefit.store_name)
+                
+                # 프론트엔드용 형식
+                recommendations.append({
+                    'benefit_id': f'B{len(recommendations)+1:03d}',
+                    'store_name': store_name,
+                    'benefit_desc': benefit.description,
+                    'eco_value': 3500,  # 임시값, 실제로는 benefit에서 가져와야 함
+                    'reason': f'{store_name}에서 제공하는 특별 혜택입니다.'
+                })
+                
+                # 기존 API용 형식
+                enhanced_benefit = benefit.__dict__.copy()
+                enhanced_benefit['store_name'] = store_name
+                enhanced_benefits.append(enhanced_benefit)
+            
+            # 패스 타입별 정보 설정 (light, premium, citizen만)
+            pass_type_info = {
+                'light': {'name': '라이트 패스', 'price': 7900},
+                'premium': {'name': '프리미엄 패스', 'price': 14900},
+                'citizen': {'name': '시민 패스', 'price': 6900}
+            }
+            
+            pass_info = pass_type_info.get(generated_pass.pass_type.value, pass_type_info['light'])
+            total_value = sum(rec['eco_value'] for rec in recommendations)
+            
+            print(f"[패스 정보] 패스 타입 값: {generated_pass.pass_type.value}")
+            print(f"[패스 정보] 매핑된 정보: {pass_info}")
+            print(f"[패스 정보] 총 혜택 가치: {total_value}")
+            
+            # 응답 데이터 구성 (프론트엔드가 기대하는 형식)
             result = {
                 'success': True,
                 'pass_id': generated_pass.pass_id,
                 'created_at': generated_pass.created_at,
                 'qr_code_available': bool(generated_pass.qr_code_path),
                 'pass_info': {
+                    'name': pass_info['name'],
+                    'price': pass_info['price'],
                     'pass_type': generated_pass.pass_type.value,
                     'theme': generated_pass.theme.value,
                     'stores_count': len(generated_pass.stores),
-                    'benefits_count': len(generated_pass.benefits)
+                    'benefits_count': len(generated_pass.benefits),
+                    'total_value': total_value,
+                    'value_ratio': int((total_value / pass_info['price']) * 100),
+                    'avg_synergy': 85.5  # 임시값
                 },
                 'stores': [store.__dict__ for store in generated_pass.stores],
-                'benefits': [benefit.__dict__ for benefit in generated_pass.benefits],
+                'benefits': enhanced_benefits,  # 기존 API 응답 유지
+                'recommendations': recommendations,  # 프론트엔드용 데이터
                 'user_input': {
                     'budget': budget,
                     'interests': interests,
@@ -365,9 +418,20 @@ def register_routes(app):
             
             return jsonify(result)
             
+        except ValueError as e:
+            # AI API 관련 에러는 400 Bad Request로 처리
+            print(f"[AI 오류] {e}")
+            return jsonify({
+                'error': f'AI 추천 서비스 오류: {str(e)}',
+                'error_type': 'AI_SERVICE_ERROR'
+            }), 400
+            
         except Exception as e:
-            print(f"[오류] 패스 생성 중 에러: {e}")
-            return jsonify({'error': f'패스 생성 중 오류가 발생했습니다: {str(e)}'}), 500
+            print(f"[시스템 오류] 패스 생성 중 에러: {e}")
+            return jsonify({
+                'error': f'시스템 오류가 발생했습니다: {str(e)}',
+                'error_type': 'SYSTEM_ERROR'
+            }), 500
 
     @app.route('/api/pass/<pass_id>')
     def get_pass_by_id(pass_id):
@@ -378,6 +442,19 @@ def register_routes(app):
             if not pass_data:
                 return jsonify({'error': '패스를 찾을 수 없습니다.'}), 404
             
+            # 혜택 데이터에서 store_id를 실제 상점명으로 변환
+            from services import load_stores_raw
+            stores_raw = load_stores_raw()
+            store_id_to_name = {store['id']: store['name'] for store in stores_raw}
+            
+            # 혜택 정보를 사용자 친화적으로 변환
+            enhanced_benefits = []
+            for benefit in pass_data.benefits:
+                store_name = store_id_to_name.get(benefit.store_name, benefit.store_name)
+                enhanced_benefit = benefit.__dict__.copy()
+                enhanced_benefit['store_name'] = store_name
+                enhanced_benefits.append(enhanced_benefit)
+            
             return jsonify({
                 'success': True,
                 'pass_data': {
@@ -386,7 +463,7 @@ def register_routes(app):
                     'theme': pass_data.theme.value,
                     'created_at': pass_data.created_at,
                     'stores': [store.__dict__ for store in pass_data.stores],
-                    'benefits': [benefit.__dict__ for benefit in pass_data.benefits],
+                    'benefits': enhanced_benefits,  # 변환된 혜택 데이터 사용
                     'user_prefs': pass_data.user_prefs.__dict__,
                     'qr_code_path': pass_data.qr_code_path
                 }

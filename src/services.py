@@ -23,7 +23,9 @@ if API_KEY:
     print(f"[AI 설정] Google Gemini 모델 '{model_name}' 초기화 완료")
 else:
     model = None
-    print("[AI 설정] API 키가 없어 AI 기능이 비활성화됩니다")
+    print("[AI 설정] ❌ GEMINI_API_KEY가 설정되지 않았습니다!")
+    print("[AI 설정] ❌ AI 기능을 사용하려면 .env 파일에 GEMINI_API_KEY를 설정해주세요")
+    print("[AI 설정] ❌ 패스 생성 시 오류가 발생합니다")
 
 def load_stores() -> List[Store]:
     """상점 데이터 로드"""
@@ -62,6 +64,24 @@ def load_stores() -> List[Store]:
         print(f"상점 데이터 로드 중 오류: {e}")
         return []
 
+def load_stores_raw() -> List[Dict]:
+    """상점 원본 데이터 로드 (ID 포함)"""
+    try:
+        stores_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'stores.json')
+        with open(stores_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            # JSON 구조가 {"stores": [...]} 형태인 경우
+            if 'stores' in data:
+                return data['stores']
+            else:
+                return data
+    except FileNotFoundError:
+        print("stores.json 파일을 찾을 수 없습니다.")
+        return []
+    except Exception as e:
+        print(f"상점 데이터 로드 중 오류: {e}")
+        return []
+
 def load_benefits() -> List[Benefit]:
     """혜택 데이터 로드"""
     try:
@@ -78,7 +98,7 @@ def load_benefits() -> List[Benefit]:
             for benefit_data in benefits_data:
                 # JSON 필드를 Benefit 모델에 맞게 변환
                 benefit = Benefit(
-                    store_name=benefit_data.get('store_name', ''),
+                    store_name=benefit_data.get('store_id', ''),  # store_id를 store_name으로 사용
                     benefit_type=benefit_data.get('benefit_type', '할인'),
                     description=benefit_data.get('desc', benefit_data.get('description', '')),
                     discount_rate=benefit_data.get('discount_rate'),
@@ -155,43 +175,56 @@ def generate_pass(user_prefs: UserPrefs, pass_type: PassType, theme: Theme) -> O
         }}
         """
         
-        if model:
-            print("[AI 추천] Gemini AI로 추천 생성 중...")
-            try:
-                response = model.generate_content(prompt)
-                response_text = response.text.strip()
-                print(f"[AI 추천] AI 응답 받음: {response_text[:100]}...")
-                
-                # JSON 파싱
-                if response_text.startswith('```json'):
-                    response_text = response_text[7:-3]
-                elif response_text.startswith('```'):
-                    response_text = response_text[3:-3]
-                
-                ai_response = json.loads(response_text)
-                recommended_store_names = ai_response.get('recommended_stores', [])
-                print(f"[AI 추천] 추천된 상점들: {recommended_store_names}")
-                
-            except Exception as e:
-                print(f"[AI 추천] AI 추천 중 오류 발생: {e}")
-                # 폴백: 랜덤 선택
-                import random
-                recommended_store_names = [store.name for store in random.sample(filtered_stores, min(3, len(filtered_stores)))]
-                print(f"[AI 추천] 폴백으로 랜덤 선택: {recommended_store_names}")
-        else:
-            print("[AI 추천] API 키가 없어 랜덤 선택으로 진행")
-            # API 키가 없는 경우 폴백
-            import random
-            recommended_store_names = [store.name for store in random.sample(filtered_stores, min(3, len(filtered_stores)))]
-            print(f"[AI 추천] 랜덤 선택된 상점들: {recommended_store_names}")
+        # AI API가 필수 - API 키가 없으면 에러
+        if not model:
+            raise ValueError("AI API 키가 설정되지 않았습니다. GEMINI_API_KEY를 설정해주세요.")
+        
+        print("[AI 추천] Gemini AI로 추천 생성 중...")
+        response = model.generate_content(prompt)
+        response_text = response.text.strip()
+        print(f"[AI 추천] AI 응답 받음: {response_text[:100]}...")
+        
+        # JSON 파싱
+        if response_text.startswith('```json'):
+            response_text = response_text[7:-3]
+        elif response_text.startswith('```'):
+            response_text = response_text[3:-3]
+        
+        ai_response = json.loads(response_text)
+        recommended_store_names = ai_response.get('recommended_stores', [])
+        
+        if not recommended_store_names:
+            raise ValueError("AI가 추천한 상점이 없습니다.")
+            
+        print(f"[AI 추천] 추천된 상점들: {recommended_store_names}")
         
         # 추천된 상점들 찾기
         recommended_stores = [store for store in all_stores 
                             if store.name in recommended_store_names]
         
-        # 해당 상점들의 혜택 찾기
+        if not recommended_stores:
+            raise ValueError(f"추천된 상점들을 찾을 수 없습니다: {recommended_store_names}")
+        
+        # 추천된 상점들의 ID 목록 생성
+        recommended_store_ids = []
+        stores_raw = load_stores_raw()
+        for store in recommended_stores:
+            # stores.json에서 store ID 찾기 (store_data에서 'id' 필드 확인)
+            for store_data in stores_raw:
+                if store_data.get('name') == store.name:
+                    recommended_store_ids.append(store_data.get('id'))
+                    print(f"[혜택 매칭] {store.name} -> {store_data.get('id')}")
+                    break
+        
+        print(f"[혜택 매칭] 추천된 상점 ID들: {recommended_store_ids}")
+        
+        # 해당 상점들의 혜택 찾기 (store_id로 매칭)
         store_benefits = [benefit for benefit in all_benefits 
-                         if benefit.store_name in recommended_store_names]
+                         if benefit.store_name in recommended_store_ids]
+        
+        print(f"[혜택 매칭] 찾은 혜택 수: {len(store_benefits)}")
+        for benefit in store_benefits:
+            print(f"[혜택 매칭] {benefit.store_name} - {benefit.description}")
         
         # 패스 ID 생성
         pass_id = f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{hash(str(user_prefs)) % 10000:04d}"
@@ -290,6 +323,33 @@ def load_pass_from_file(pass_id: str) -> Optional[Pass]:
         with open(filepath, 'r', encoding='utf-8') as f:
             pass_data = json.load(f)
         
+        # 호환성을 위한 데이터 구조 확인
+        if 'stores' not in pass_data:
+            # 이전 형식의 파일은 스킵
+            print(f"패스 로드 중 오류: 이전 형식의 패스 파일 스킵 - {pass_id}")
+            return None
+            
+        if 'benefits' not in pass_data:
+            print(f"패스 로드 중 오류: benefits 필드 없음 - {pass_id}")
+            return None
+        
+        # PassType 호환성 확인
+        pass_type_str = pass_data.get('pass_type', 'light')
+        try:
+            pass_type = PassType(pass_type_str)
+        except ValueError:
+            # 유효하지 않은 PassType은 light로 변환
+            print(f"패스 로드 중 경고: 유효하지 않은 패스 타입 '{pass_type_str}' -> 'light'로 변환")
+            pass_type = PassType.LIGHT
+        
+        # Theme 호환성 확인  
+        theme_str = pass_data.get('theme', '음식')
+        try:
+            theme = Theme(theme_str)
+        except ValueError:
+            print(f"패스 로드 중 경고: 유효하지 않은 테마 '{theme_str}' -> '음식'으로 변환")
+            theme = Theme.FOOD
+        
         # 데이터 복원
         stores = [Store(**store_data) for store_data in pass_data['stores']]
         benefits = [Benefit(**benefit_data) for benefit_data in pass_data['benefits']]
@@ -297,8 +357,8 @@ def load_pass_from_file(pass_id: str) -> Optional[Pass]:
         
         pass_obj = Pass(
             pass_id=pass_data['pass_id'],
-            pass_type=PassType(pass_data['pass_type']),
-            theme=Theme(pass_data['theme']),
+            pass_type=pass_type,
+            theme=theme,
             stores=stores,
             benefits=benefits,
             created_at=pass_data['created_at'],

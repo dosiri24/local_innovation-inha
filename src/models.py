@@ -45,8 +45,6 @@ class PassType(Enum):
     LIGHT = "light"
     PREMIUM = "premium"
     CITIZEN = "citizen"
-    TASTE = "맛있는 동인천"
-    BEAUTY = "아름다운 동인천"
     
 class Theme(Enum):
     """테마"""

@@ -428,52 +428,9 @@
                 console.error('패스 목록 로드 실패:', error);
                 document.getElementById('loading').style.display = 'none';
                 
-                // API 실패 시 데모 데이터 표시
-                const demoData = generateDemoData();
-                if (demoData.length > 0) {
-                    displayPasses(demoData);
-                } else {
-                    showNoPasses();
-                }
+                // API 실패 시 실제 오류 메시지 표시
+                showNoPasses();
             }
-        }
-
-        // 데모 데이터 생성
-        function generateDemoData() {
-            return [
-                {
-                    pass_id: 'DEMO001',
-                    created_at: '2024-12-19 14:30:00',
-                    pass_info: {
-                        name: '프리미엄 패스',
-                        price: 14900,
-                        benefits_count: 6,
-                        total_value: 28000
-                    },
-                    user_input: {
-                        themes: ['해산물', '카페'],
-                        request: '신선한 해산물과 분위기 좋은 카페를 찾고 있어요',
-                        pass_type: 'premium'
-                    },
-                    qr_code_path: '/qr_codes/pass_DEMO001.png'
-                },
-                {
-                    pass_id: 'DEMO002',
-                    created_at: '2024-12-18 16:45:00',
-                    pass_info: {
-                        name: '스탠다드 패스',
-                        price: 9900,
-                        benefits_count: 4,
-                        total_value: 16000
-                    },
-                    user_input: {
-                        themes: ['전통', '맛집'],
-                        request: '전통적인 분위기에서 맛있는 음식을 즐기고 싶어요',
-                        pass_type: 'light'
-                    },
-                    qr_code_path: '/qr_codes/pass_DEMO002.png'
-                }
-            ];
         }
 
         // 패스 없음 표시
@@ -502,11 +459,19 @@
             card.className = 'pass-card';
             
             const createdDate = new Date(pass.created_at).toLocaleDateString('ko-KR');
-            const valueRatio = Math.round((pass.pass_info.total_value / pass.pass_info.price) * 100);
+            
+            // 패스 타입별 가격 정보
+            const passTypeInfo = {
+                'light': { name: '라이트 패스', price: 7900 },
+                'premium': { name: '프리미엄 패스', price: 14900 },
+                'citizen': { name: '시민 패스', price: 6900 }
+            };
+            
+            const typeInfo = passTypeInfo[pass.pass_type] || { name: '패스', price: 0 };
             
             card.innerHTML = `
                 <div class="pass-header">
-                    <div class="pass-type">${pass.pass_info.name}</div>
+                    <div class="pass-type">${typeInfo.name}</div>
                     <div class="pass-date">${createdDate}</div>
                 </div>
                 
@@ -515,20 +480,20 @@
                     
                     <div class="pass-stats">
                         <div class="stat-item">
-                            <div class="stat-value">${pass.pass_info.benefits_count}개</div>
-                            <div class="stat-label">포함 혜택</div>
+                            <div class="stat-value">${pass.store_count}개</div>
+                            <div class="stat-label">포함 매장</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-value">${valueRatio}%</div>
-                            <div class="stat-label">가치 비율</div>
+                            <div class="stat-value">${typeInfo.price.toLocaleString()}원</div>
+                            <div class="stat-label">패스 가격</div>
                         </div>
                     </div>
                     
                     <div style="background: rgba(102, 126, 234, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
-                        <div style="color: #667eea; font-weight: 600; margin-bottom: 8px;">🎯 선택한 테마</div>
-                        <div style="color: #666; font-size: 0.9em;">${pass.user_input.themes.join(', ')}</div>
-                        <div style="color: #667eea; font-weight: 600; margin: 8px 0 5px 0;">💬 요청사항</div>
-                        <div style="color: #666; font-size: 0.9em;">${pass.user_input.request}</div>
+                        <div style="color: #667eea; font-weight: 600; margin-bottom: 8px;">🎯 테마</div>
+                        <div style="color: #666; font-size: 0.9em;">${pass.theme}</div>
+                        <div style="color: #667eea; font-weight: 600; margin: 8px 0 5px 0;">� 패스 타입</div>
+                        <div style="color: #666; font-size: 0.9em;">${pass.pass_type}</div>
                     </div>
                 </div>
                 

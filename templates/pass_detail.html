@@ -138,31 +138,42 @@
                 <h3>📋 패스 정보</h3>
                 <div class="info-row">
                     <span class="label">패스 타입</span>
-                    <span class="value">{{ pass_data.pass_type }}</span>
+                    <span class="value">{{ pass_data.pass_type.value }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">테마</span>
+                    <span class="value">{{ pass_data.theme.value }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">포함 매장</span>
+                    <span class="value">{{ pass_data.stores|length }}개</span>
                 </div>
                 <div class="info-row">
                     <span class="label">혜택 개수</span>
-                    <span class="value">{{ pass_data.recommendations|length }}개</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">총 혜택 가치</span>
-                    <span class="value">{{ "{:,}".format(pass_data.total_value) }}원</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">상생 점수</span>
-                    <span class="value">{{ "%.1f"|format(pass_data.avg_synergy) }}점</span>
+                    <span class="value">{{ pass_data.benefits|length }}개</span>
                 </div>
             </div>
             
             <div class="benefits">
+                <h3>🏪 포함된 매장</h3>
+                {% for store in pass_data.stores %}
+                <div class="benefit-item">
+                    <div class="store-name">{{ store.name }}</div>
+                    <div class="benefit-desc">{{ store.description }}</div>
+                    <div class="benefit-value">📍 {{ store.location }}</div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="benefits">
                 <h3>🎁 포함된 혜택</h3>
-                {% for benefit in pass_data.recommendations %}
+                {% for benefit in pass_data.benefits %}
                 <div class="benefit-item">
                     <div class="store-name">{{ benefit.store_name }}</div>
-                    <div class="benefit-desc">{{ benefit.benefit_desc }}</div>
-                    <div class="benefit-value">💰 {{ "{:,}".format(benefit.eco_value) }}원 상당</div>
-                    {% if benefit.reason %}
-                    <div class="reason">💡 {{ benefit.reason }}</div>
+                    <div class="benefit-desc">{{ benefit.description }}</div>
+                    <div class="benefit-value">🎯 {{ benefit.benefit_type }}</div>
+                    {% if benefit.discount_rate %}
+                    <div class="reason">� 할인률: {{ benefit.discount_rate }}</div>
                     {% endif %}
                 </div>
                 {% endfor %}

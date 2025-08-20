@@ -275,7 +275,7 @@
     </style>
 </head>
 <body>
-    <a href="index.html" class="back-link">← 메인으로</a>
+    <a href="/" class="back-link">← 메인으로</a>
     
     <div class="signup-container">
         <h1 class="logo">🎟️ 제물포GO</h1>
@@ -353,12 +353,12 @@
         </div>
 
         <div class="login-link">
-            <p>이미 계정이 있으신가요? <a href="login.html">로그인하기</a></p>
+            <p>이미 계정이 있으신가요? <a href="/login">로그인하기</a></p>
         </div>
     </div>
 
-    <!-- Firebase SDK 초기화 코드 (모든 페이지에 필요) -->
-    <script type="module" src="auth.js"></script>
+    <!-- 인증 스크립트 로드 -->
+    <script src="/static/js/auth.js"></script>
     
     <script>
         // 폼 제출 이벤트 처리
@@ -369,6 +369,12 @@
             const password = document.getElementById('signup-password').value;
             const confirmPassword = document.getElementById('confirm-password').value;
             const signupBtn = document.getElementById('signup-btn');
+            
+            // 입력값 검증
+            if (!email || !password || !confirmPassword) {
+                showMessage('모든 필드를 입력해주세요.', 'error');
+                return;
+            }
             
             // 비밀번호 확인
             if (password !== confirmPassword) {
@@ -386,16 +392,17 @@
             signupBtn.disabled = true;
             signupBtn.textContent = '가입 중...';
             
-            // 기존 signUp 함수 호출
+            // signUp 함수 호출 (auth.js에서 정의됨)
             if (typeof signUp === 'function') {
-                signUp();
-            } else {
-                // signUp 함수가 없는 경우 기본 처리
-                setTimeout(() => {
-                    showMessage('회원가입 기능을 구현 중입니다.', 'error');
+                signUp().finally(() => {
+                    // 회원가입 완료 후 버튼 다시 활성화
                     signupBtn.disabled = false;
                     signupBtn.textContent = '✨ 회원가입';
-                }, 1000);
+                });
+            } else {
+                showMessage('회원가입 기능을 불러올 수 없습니다.', 'error');
+                signupBtn.disabled = false;
+                signupBtn.textContent = '✨ 회원가입';
             }
         });
 
@@ -406,8 +413,13 @@
             
             if (confirmPassword && password !== confirmPassword) {
                 this.style.borderColor = '#fc8181';
+                this.style.boxShadow = '0 0 0 3px rgba(252, 129, 129, 0.1)';
+            } else if (confirmPassword) {
+                this.style.borderColor = '#48bb78';
+                this.style.boxShadow = '0 0 0 3px rgba(72, 187, 120, 0.1)';
             } else {
                 this.style.borderColor = '#e1e1e1';
+                this.style.boxShadow = 'none';
             }
         });
 
@@ -434,22 +446,6 @@
                 successDiv.style.display = 'none';
             }, 5000);
         }
-
-        // 회원가입 성공 시 호출할 함수 (auth.js에서 사용 가능)
-        window.onSignUpSuccess = function() {
-            showMessage('회원가입이 완료되었습니다! 로그인 페이지로 이동합니다.', 'success');
-            setTimeout(() => {
-                window.location.href = 'login.html';
-            }, 2000);
-        };
-
-        // 회원가입 실패 시 호출할 함수 (auth.js에서 사용 가능)
-        window.onSignUpError = function(errorMessage) {
-            showMessage(errorMessage || '회원가입 중 오류가 발생했습니다.', 'error');
-            const signupBtn = document.getElementById('signup-btn');
-            signupBtn.disabled = false;
-            signupBtn.textContent = '✨ 회원가입';
-        };
     </script>
 </body>
 </html>
