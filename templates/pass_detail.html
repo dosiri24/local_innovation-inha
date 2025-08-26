@@ -206,9 +206,8 @@
                         {% set key = (benefit.benefit_code or benefit.store_name) %}
                         {% set redeemed_at = pass_data.redemptions.get(key) if pass_data.redemptions else None %}
                         {% if redeemed_at %}
-                            {% set parts = redeemed_at|split('T') %}
-                            {% set time_part = parts[1] if parts|length > 1 else redeemed_at %}
-                            <span class="badge badge-used">사용됨 · {{ time_part[:5] }}</span>
+                            {% set time_part = redeemed_at[11:16] if redeemed_at and redeemed_at|length >= 16 else redeemed_at %}
+                            <span class="badge badge-used">사용됨{% if time_part %} · {{ time_part }}{% endif %}</span>
                         {% else %}
                             <span class="badge badge-unused">미사용</span>
                         {% endif %}
