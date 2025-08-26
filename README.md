@@ -27,7 +27,7 @@
 │   
 ├── 📂 storage/               # 저장소
 │   ├── 📂 saved_passes/      # 생성된 패스 파일들
-│   └── 📂 qr_codes/          # QR 코드 이미지들
+│   └── (폐지됨) qr_codes/
 │   
 ├── 📂 static/                # 정적 파일
 │   ├── 📂 css/               # 스타일시트
@@ -91,7 +91,7 @@ python main.py
 ### 데이터 관리
 
 - **data/**: JSON 형태의 상점, 혜택, 테마 데이터
-- **storage/**: 생성된 패스와 QR 코드 저장
+- **storage/**: 생성된 패스 저장
 
 ## 🤖 AI 기능
 
@@ -103,13 +103,14 @@ python main.py
 
 - `POST /api/generate-pass` - AI 패스 생성
 - `GET /api/pass/{id}` - 패스 조회
+- `POST /api/pass/{id}/redeem` - 혜택 코드(4자리)로 사용 처리
 - `GET /api/user/passes` - 사용자 패스 목록
 - `GET /api/themes` - 테마 목록
 
 ## 📱 주요 기능
 
 1. **AI 기반 추천**: 사용자 선호도를 분석하여 최적의 관광 코스 생성
-2. **QR 코드**: 생성된 패스를 QR 코드로 저장 및 공유
+2. **혜택 코드 사용 처리**: 사장님이 혜택 코드(예: A1B2)를 입력해 사용 처리
 3. **세션 관리**: 사용자별 패스 관리
 4. **반응형 웹**: 모바일과 데스크톱 지원
 

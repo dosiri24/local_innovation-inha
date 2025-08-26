@@ -1,8 +1,8 @@
 """
 데이터 모델 정의
 """
-from dataclasses import dataclass
-from typing import List, Optional
+from dataclasses import dataclass, field
+from typing import List, Optional, Dict
 from enum import Enum
 
 @dataclass
@@ -29,6 +29,8 @@ class Benefit:
     discount_rate: Optional[str] = None
     valid_until: Optional[str] = None
     terms: Optional[str] = None
+    # 패스 내 개별 혜택 식별용 4자리 코드(대문자/숫자)
+    benefit_code: Optional[str] = None
 
 @dataclass
 class UserPrefs:
@@ -68,4 +70,5 @@ class Pass:
     benefits: List[Benefit]
     created_at: str
     user_prefs: UserPrefs
-    qr_code_path: Optional[str] = None
+    # 혜택 코드별 사용 처리 시간(ISO8601). 예: {"A1B2": "2025-08-26T12:34:56"}
+    redemptions: Dict[str, str] = field(default_factory=dict)

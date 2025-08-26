@@ -124,6 +124,38 @@
         .back-btn:hover {
             background: #5a67d8;
         }
+        .redeem-box {
+            background: #fff7e6;
+            border: 1px solid #ffd699;
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+        .redeem-input {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            width: 120px;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .redeem-btn {
+            background: #ff9800;
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .badge-used { background: #e6ffed; color: #137333; border: 1px solid #b7e1cd; }
+        .badge-unused { background: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
     </style>
 </head>
 <body>
@@ -164,21 +196,40 @@
                 </div>
                 {% endfor %}
             </div>
-            
+
             <div class="benefits">
                 <h3>🎁 포함된 혜택</h3>
                 {% for benefit in pass_data.benefits %}
                 <div class="benefit-item">
-                    <div class="store-name">{{ benefit.store_name }}</div>
+                    <div class="store-name">
+                        혜택 코드: {{ benefit.benefit_code or benefit.store_name }}
+                        {% set key = (benefit.benefit_code or benefit.store_name) %}
+                        {% set redeemed_at = pass_data.redemptions.get(key) if pass_data.redemptions else None %}
+                        {% if redeemed_at %}
+                            {% set parts = redeemed_at|split('T') %}
+                            {% set time_part = parts[1] if parts|length > 1 else redeemed_at %}
+                            <span class="badge badge-used">사용됨 · {{ time_part[:5] }}</span>
+                        {% else %}
+                            <span class="badge badge-unused">미사용</span>
+                        {% endif %}
+                    </div>
                     <div class="benefit-desc">{{ benefit.description }}</div>
                     <div class="benefit-value">🎯 {{ benefit.benefit_type }}</div>
                     {% if benefit.discount_rate %}
-                    <div class="reason">� 할인률: {{ benefit.discount_rate }}</div>
+                    <div class="reason">할인율: {{ benefit.discount_rate }}</div>
                     {% endif %}
                 </div>
                 {% endfor %}
             </div>
-            
+
+            <div class="redeem-box">
+                <strong>사장님 전용 · 사용 처리</strong>
+                <p style="margin:8px 0 12px; color:#7b4b00;">혜택 코드 4자리를 입력하면 해당 혜택이 사용 처리됩니다.</p>
+                <input id="benefitCodeInput" class="redeem-input" type="text" maxlength="4" placeholder="예: A1B2" />
+                <button class="redeem-btn" onclick="redeemStore()">사용 처리</button>
+                <div id="redeemMsg" style="margin-top:10px; color:#333;"></div>
+            </div>
+
             <div style="text-align: center;">
                 <a href="/" class="back-btn">새 패스 만들기</a>
             </div>
@@ -188,5 +239,39 @@
             제물포GO 패스 - 인천 제물포구의 숨은 명소를 발견하세요
         </div>
     </div>
+    <script>
+        async function redeemStore() {
+            const codeEl = document.getElementById('benefitCodeInput');
+            const msgEl = document.getElementById('redeemMsg');
+            const raw = (codeEl.value || '').trim().toUpperCase();
+            if (!/^[A-Z0-9]{4}$/.test(raw)) {
+                msgEl.style.color = '#c5221f';
+                msgEl.textContent = '유효한 4자리 혜택 코드를 입력하세요.';
+                return;
+            }
+            msgEl.style.color = '#333';
+            msgEl.textContent = '처리 중...';
+            try {
+                const res = await fetch(`/api/pass/{{ pass_data.pass_id }}/redeem`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ benefit_code: raw })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    msgEl.style.color = '#c5221f';
+                    msgEl.textContent = data.error || data.message || '사용 처리에 실패했습니다.';
+                } else {
+                    msgEl.style.color = '#137333';
+                    msgEl.textContent = `사용 처리 완료 (${raw}) · ${data.redeemed_at}`;
+                    // 간단히 새로고침하여 상태 갱신
+                    setTimeout(() => location.reload(), 800);
+                }
+            } catch (e) {
+                msgEl.style.color = '#c5221f';
+                msgEl.textContent = '네트워크 오류가 발생했습니다.';
+            }
+        }
+    </script>
 </body>
 </html>

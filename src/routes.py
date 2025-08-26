@@ -1,12 +1,11 @@
 """
 Flask 라우트 정의
 """
-from flask import render_template, request, jsonify, send_file, send_from_directory, session, redirect, url_for
-import os
+from flask import render_template, request, jsonify, send_from_directory, session, redirect, url_for
 from models import UserPrefs, PassType, Theme
 from services import (
-    load_stores, load_benefits, load_themes, generate_pass, 
-    load_pass_from_file, get_all_passes
+    load_stores, load_benefits, load_themes, generate_pass,
+    load_pass_from_file, get_all_passes, mark_redeemed
 )
 
 def login_required(f):
@@ -106,7 +105,7 @@ def register_routes(app):
 
     @app.route('/pass/<pass_id>')
     def view_pass(pass_id):
-        """QR 코드 스캔 시 보여줄 패스 상세 페이지"""
+        """패스 상세 페이지"""
         try:
             print(f"[패스 상세] 요청된 패스 ID: {pass_id}")
             pass_data = load_pass_from_file(pass_id)
@@ -397,7 +396,6 @@ def register_routes(app):
                 'success': True,
                 'pass_id': generated_pass.pass_id,
                 'created_at': generated_pass.created_at,
-                'qr_code_available': bool(generated_pass.qr_code_path),
                 'pass_info': {
                     'name': pass_info['name'],
                     'price': pass_info['price'],
@@ -461,6 +459,11 @@ def register_routes(app):
                 store_name = store_id_to_name.get(benefit.store_name, benefit.store_name)
                 enhanced_benefit = benefit.__dict__.copy()
                 enhanced_benefit['store_name'] = store_name
+                # 사용 상태 추가(혜택 코드 우선, 구버전은 store_id)
+                redeem_key = getattr(benefit, 'benefit_code', None) or benefit.store_name
+                redeemed_at = (pass_data.redemptions or {}).get(redeem_key)
+                enhanced_benefit['redeemed'] = bool(redeemed_at)
+                enhanced_benefit['redeemed_at'] = redeemed_at
                 enhanced_benefits.append(enhanced_benefit)
             
             return jsonify({
@@ -473,7 +476,7 @@ def register_routes(app):
                     'stores': [store.__dict__ for store in pass_data.stores],
                     'benefits': enhanced_benefits,  # 변환된 혜택 데이터 사용
                     'user_prefs': pass_data.user_prefs.__dict__,
-                    'qr_code_path': pass_data.qr_code_path
+                    'redemptions': pass_data.redemptions or {}
                 }
             })
             
@@ -501,22 +504,41 @@ def register_routes(app):
             print(f"[오류] 사용자 패스 조회 중 에러: {e}")
             return jsonify({'error': f'패스 조회 중 오류가 발생했습니다: {str(e)}'}), 500
 
-    @app.route('/api/pass/<pass_id>/qr')
-    def get_pass_qr_code(pass_id):
-        """패스의 QR 코드 이미지 다운로드"""
+    # QR 다운로드 엔드포인트는 제거되었습니다.
+
+    @app.route('/api/pass/<pass_id>/redeem', methods=['POST'])
+    def redeem_pass_for_store(pass_id):
+        """사장님 혜택 코드(4자리)를 입력받아 사용 처리"""
         try:
-            pass_data = load_pass_from_file(pass_id)
-            
-            if not pass_data:
-                return jsonify({'error': '패스를 찾을 수 없습니다.'}), 404
-            
-            qr_code_path = pass_data.qr_code_path
-            
-            if not qr_code_path or not os.path.exists(qr_code_path):
-                return jsonify({'error': 'QR 코드를 찾을 수 없습니다.'}), 404
-            
-            return send_file(qr_code_path, as_attachment=True, download_name=f'pass_{pass_id}_qr.png')
-            
+            data = request.get_json(silent=True) or {}
+            # 구버전 호환: store_code 키도 허용
+            benefit_code = data.get('benefit_code') or data.get('store_code', '')
+
+            result = mark_redeemed(pass_id, benefit_code)
+            status = result.get('status')
+
+            if status == 'not_found':
+                return jsonify({'error': result.get('message', '패스를 찾을 수 없습니다.')}), 404
+            if status == 'invalid_benefit':
+                return jsonify({'error': result.get('message', '유효하지 않은 혜택 코드입니다.')}), 400
+            if status == 'already_redeemed':
+                return jsonify({
+                    'success': False,
+                    'message': result.get('message', '이미 사용 처리된 혜택입니다.'),
+                    'redeemed_at': result.get('redeemed_at')
+                }), 409
+            if status != 'ok':
+                return jsonify({'error': result.get('message', '사용 처리에 실패했습니다.')}), 500
+
+            pass_obj = result.get('pass')
+            redeemed_at = result.get('redeemed_at')
+            return jsonify({
+                'success': True,
+                'pass_id': pass_id,
+                'benefit_code': benefit_code.strip().upper(),
+                'redeemed_at': redeemed_at,
+                'redemptions': getattr(pass_obj, 'redemptions', {})
+            })
         except Exception as e:
-            print(f"[오류] QR 코드 조회 중 에러: {e}")
-            return jsonify({'error': f'QR 코드 조회 중 오류가 발생했습니다: {str(e)}'}), 500
+            print(f"[오류] 사용 처리 중 에러: {e}")
+            return jsonify({'error': f'사용 처리 중 오류가 발생했습니다: {str(e)}'}), 500
