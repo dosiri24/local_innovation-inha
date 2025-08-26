@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="{{ current_lang }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제물포GO - 로그인/회원가입</title>
+    <title>{{ t('index.title', '제물포GO - 로그인/회원가입') }}</title>
     <style>
         * {
             margin: 0;
@@ -134,26 +134,27 @@
     </style>
 </head>
 <body>
+    {% include '_lang_switcher.html' %}
     <div class="auth-container">
-        <div class="logo">🎯 제물포GO</div>
-        <div class="subtitle">인천 제물포의 특별한 여행을 시작해보세요</div>
+        <div class="logo">🎯 {{ t('index.brand', '제물포GO') }}</div>
+        <div class="subtitle">{{ t('index.subtitle', '인천 제물포의 특별한 여행을 시작해보세요') }}</div>
         
         <div class="auth-buttons">
-            <a href="/login" class="auth-btn login-btn">🔑 로그인</a>
-            <a href="/member" class="auth-btn signup-btn">👤 회원가입</a>
+            <a href="/login" class="auth-btn login-btn">🔑 {{ t('index.login', '로그인') }}</a>
+            <a href="/member" class="auth-btn signup-btn">👤 {{ t('index.signup', '회원가입') }}</a>
         </div>
         
         <div class="divider">
-            <span>또는</span>
+            <span>{{ t('index.or', '또는') }}</span>
         </div>
         
         <button onclick="demoLogin()" class="auth-btn login-btn">
-            🚀 데모 계정으로 체험하기
+            🚀 {{ t('index.tryDemo', '데모 계정으로 체험하기') }}
         </button>
         
         <div class="demo-info">
-            <strong>🎮 데모 모드</strong>
-            회원가입 없이 바로 제물포GO의 모든 기능을 체험해보세요!
+            <strong>🎮 {{ t('index.demoTitle', '데모 모드') }}</strong>
+            {{ t('index.demoDesc', '회원가입 없이 바로 제물포GO의 모든 기능을 체험해보세요!') }}
         </div>
     </div>
 

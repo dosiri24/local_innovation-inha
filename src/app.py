@@ -1,12 +1,13 @@
 """
 Flask 웹 애플리케이션 설정 및 초기화
 """
-from flask import Flask
+from flask import Flask, session
 from flask_cors import CORS
 from flask_session import Session
 import os
 import secrets
 from routes import register_routes
+from i18n import translate, SUPPORTED_LANGS
 from services import load_stores, load_benefits
 from dotenv import load_dotenv
 
@@ -66,6 +67,19 @@ def create_app():
 
     # 라우트 등록
     register_routes(app)
+
+    # Jinja 컨텍스트: 번역 함수 및 언어 목록 주입
+    @app.context_processor
+    def inject_i18n():
+        def t(key: str, default: str = None):
+            lang = session.get('lang', 'ko')
+            return translate(lang, key, default)
+        return {
+            't': t,
+            'current_lang': session.get('lang', 'ko'),
+            'available_langs': [('ko', '한국어'), ('en', 'English')],
+            'supported_langs': SUPPORTED_LANGS,
+        }
     
     return app
 

@@ -7,6 +7,7 @@ from services import (
     load_stores, load_benefits, load_themes, generate_pass,
     load_pass_from_file, get_all_passes, mark_redeemed
 )
+from i18n import SUPPORTED_LANGS
 
 def login_required(f):
     """로그인이 필요한 페이지에 적용할 데코레이터"""
@@ -22,6 +23,17 @@ def login_required(f):
 
 def register_routes(app):
     """Flask 앱에 모든 라우트 등록"""
+    
+    # 언어 설정 라우트
+    @app.route('/set-lang')
+    def set_lang():
+        from flask import request, redirect
+        lang = (request.args.get('lang') or 'ko').lower()
+        if lang not in ['ko', 'en']:
+            lang = 'ko'
+        session['lang'] = lang
+        referer = request.headers.get('Referer') or url_for('auth_page')
+        return redirect(referer)
     
     # 헬스체크 엔드포인트
     @app.route('/health')

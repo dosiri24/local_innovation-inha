@@ -1,0 +1,14 @@
+<style>
+  .lang-switcher { position: fixed; top: 12px; right: 12px; z-index: 9999; }
+  .lang-select { padding: 6px 10px; border-radius: 8px; border: 1px solid #ddd; background: rgba(255,255,255,0.9); }
+</style>
+<div class="lang-switcher">
+  <form action="/set-lang" method="get">
+    <select name="lang" class="lang-select" onchange="this.form.submit()" aria-label="Language">
+      {% for code, label in available_langs %}
+        <option value="{{ code }}" {% if current_lang == code %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </form>
+</div>
+
