@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8"/>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>제물포GO 패스 지도 - 내 패스 장소들 v2.0</title>
+    <!-- API Key Update: 2025-08-26 19:08 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        #map {
+            width: 100%;
+            height: 600px;
+        }
+
+        .places-list {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .places-list h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .place-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .place-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .place-marker {
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 15px;
+            font-size: 14px;
+        }
+
+        .place-info {
+            flex: 1;
+        }
+
+        .place-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .place-desc {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .back-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .buttons-container {
+            text-align: center;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: linear-gradient(135deg, #fff5f5, #fed7d7);
+            color: #c53030;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #fc8181;
+            margin: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5em;
+            }
+            
+            #map {
+                height: 400px;
+            }
+            
+            .place-item {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .place-marker {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ 제물포GO 패스 지도</h1>
+        <p id="pass-title">내 패스에 포함된 장소들을 확인해보세요</p>
+    </div>
+
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <div>패스 데이터를 불러오는 중...</div>
+    </div>
+
+    <div class="error" id="error" style="display: none;">
+        패스 데이터를 불러올 수 없습니다.
+    </div>
+
+    <div class="container" id="main-content" style="display: none;">
+        <div class="map-container">
+            <div id="map"></div>
+        </div>
+
+        <div class="places-list">
+            <h3>📍 패스에 포함된 장소들</h3>
+            <div id="places-container">
+                <!-- 장소 목록이 여기에 표시됩니다 -->
+            </div>
+        </div>
+
+        <div class="buttons-container">
+            <a href="/pass-generator" class="back-btn">← 패스 생성기로</a>
+            <a href="/main" class="back-btn">🏠 메인으로</a>
+            <button onclick="testWithSampleData()" class="back-btn" style="background: linear-gradient(45deg, #f39c12, #e67e22);">🧪 샘플 데이터로 테스트</button>
+            <button onclick="showApiKeyHelp()" class="back-btn" style="background: linear-gradient(45deg, #9b59b6, #8e44ad);">🔧 API 키 설정 도움말</button>
+        </div>
+    </div>
+
+    <script>
+        // 카카오맵 API 키 - 환경 변수에서 로드
+        const apiKey = "{{ kakao_api_key }}";
+        console.log('🔑 [2025-08-26 19:08] 사용 중인 카카오맵 API 키:', apiKey);
+        console.log('🔑 API 키 업데이트 확인: ENV VARIABLE LOADED');
+        
+        // 매장 위치 마커 생성 함수
+        function generateLocationMarkers(stores) {
+            if (!stores || stores.length === 0) return '';
+            
+            const areaColors = {
+                '차이나타운': '#ff9800',
+                '월미도': '#4caf50', 
+                '개항로': '#9c27b0',
+                '골목상권': '#03a9f4',
+                '인천역': '#f44336',
+                '제물포시장': '#795548'
+            };
+            
+            let markersHtml = '';
+            stores.forEach((store, index) => {
+                const location = storeLocations[store.name];
+                if (location) {
+                    const color = areaColors[location.area] || '#666';
+                    // 상대적 위치 계산 (임시)
+                    const left = 20 + (index % 4) * 20;
+                    const top = 20 + Math.floor(index / 4) * 15;
+                    
+                    markersHtml += `
+                        <div style="
+                            position: absolute; 
+                            left: ${left}%; 
+                            top: ${top}%; 
+                            width: 30px; 
+                            height: 30px; 
+                            background: ${color}; 
+                            border-radius: 50%; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center; 
+                            color: white; 
+                            font-weight: bold; 
+                            font-size: 12px;
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+                            cursor: pointer;
+                            pointer-events: all;
+                            transition: transform 0.2s ease;
+                        " 
+                        onmouseover="this.style.transform='scale(1.2)'" 
+                        onmouseout="this.style.transform='scale(1)'"
+                        onclick="highlightMapArea('${store.name}')"
+                        title="${store.name} - ${location.area}">
+                            ${index + 1}
+                        </div>
+                    `;
+                }
+            });
+            
+            return markersHtml;
+        }
+
+        // 지도와 마커 관리 변수
+        let map;
+        let markers = [];
+        
+        // 패스 데이터와 장소 좌표 매핑 (하드코딩된 데이터 사용)
+        let storeLocations = {
+            "월미도 횟집": { lat: 37.4759, lng: 126.5954, area: "월미도", desc: "신선한 해산물을 즐길 수 있는 곳" },
+            "개항로 책방": { lat: 37.4763, lng: 126.6163, area: "개항로", desc: "오래된 책과 이야기가 있는 곳" },
+            "차이나타운 만두집": { lat: 37.4756, lng: 126.6173, area: "차이나타운", desc: "전통 방식으로 만든 수제 만두" },
+            "골목카페 힐링": { lat: 37.4765, lng: 126.6158, area: "골목상권", desc: "조용한 골목 속 숨은 카페" },
+            "스타벅스 인천역점": { lat: 37.4755, lng: 126.6169, area: "인천역", desc: "편리한 위치의 프랜차이즈 카페" },
+            "제물포 전통시장 떡집": { lat: 37.4761, lng: 126.6167, area: "제물포시장", desc: "3대째 이어온 전통 떡집" },
+            "바다풍경 펜션카페": { lat: 37.4758, lng: 126.5951, area: "월미도", desc: "바다를 보며 커피를 마실 수 있는 곳" },
+            "골목 수제버거": { lat: 37.4767, lng: 126.6155, area: "골목상권", desc: "작은 골목의 수제 햄버거 전문점" },
+            "전통 한옥카페": { lat: 37.4764, lng: 126.6161, area: "개항로", desc: "한옥을 개조한 전통차 전문점" },
+            "맥도날드 인천점": { lat: 37.4754, lng: 126.6171, area: "인천역", desc: "글로벌 패스트푸드 체인점" },
+            "골목 떡볶이": { lat: 37.4766, lng: 126.6156, area: "골목상권", desc: "30년 전통의 골목 떡볶이집" },
+            "제물포 갤러리카페": { lat: 37.4762, lng: 126.6165, area: "개항로", desc: "지역 작가들의 작품을 전시하는 갤러리 카페" },
+            "바다소리 펜션": { lat: 37.4757, lng: 126.5952, area: "월미도", desc: "파도소리를 들으며 휴식할 수 있는 펜션" },
+            "차이나타운 약재상": { lat: 37.4757, lng: 126.6175, area: "차이나타운", desc: "100년 전통의 한약재 전문점" },
+            "월미공원 사진관": { lat: 37.4760, lng: 126.5955, area: "월미도", desc: "여행 기념사진 전문 스튜디오" },
+            "인천 자유공원 매점": { lat: 37.4749, lng: 126.6157, area: "자유공원", desc: "공원 내 유일한 매점" },
+            "제물포 수제 맥주집": { lat: 37.4762, lng: 126.6168, area: "제물포시장", desc: "지역 양조장에서 만든 수제 맥주 전문점" },
+            "개항로 빈티지샵": { lat: 37.4763, lng: 126.6162, area: "개항로", desc: "1960-80년대 빈티지 의류 전문점" },
+            "골목 치킨집": { lat: 37.4768, lng: 126.6154, area: "골목상권", desc: "바삭한 치킨으로 유명한 동네 치킨집" },
+            "차이나타운 짜장면집": { lat: 37.4755, lng: 126.6174, area: "차이나타운", desc: "진짜 차이나타운 맛을 자랑하는 짜장면집" },
+            "월미도 바다카페": { lat: 37.4759, lng: 126.5953, area: "월미도", desc: "월미도 최고의 일몰 뷰를 자랑하는 카페" },
+            "제물포 공방": { lat: 37.4760, lng: 126.6166, area: "제물포시장", desc: "도자기, 가죽공예 등을 체험할 수 있는 공방" },
+            "개항로 고서점": { lat: 37.4764, lng: 126.6160, area: "개항로", desc: "희귀한 고서와 절판 도서를 판매하는 서점" },
+            "골목 순대국집": { lat: 37.4765, lng: 126.6157, area: "골목상권", desc: "할머니 손맛을 자랑하는 순대국 전문점" },
+            "인천역 편의점": { lat: 37.4753, lng: 126.6170, area: "인천역", desc: "인천역 내 24시간 편의점" },
+            "월미도 해물찜": { lat: 37.4758, lng: 126.5956, area: "월미도", desc: "신선한 해물로 만든 매콤한 해물찜 전문점" },
+            "차이나타운 월병집": { lat: 37.4756, lng: 126.6172, area: "차이나타운", desc: "전통 방식으로 만든 월병과 중국 과자 전문점" },
+            "제물포 꽃집": { lat: 37.4761, lng: 126.6164, area: "제물포시장", desc: "신선한 꽃과 화분을 판매하는 동네 꽃집" },
+            "개항로 타로카페": { lat: 37.4765, lng: 126.6159, area: "개항로", desc: "타로 상담을 받을 수 있는 특별한 카페" },
+            "골목 김밥천국": { lat: 37.4769, lng: 126.6153, area: "골목상권", desc: "24시간 운영하는 김밥 전문점" },
+            "월미도 게스트하우스": { lat: 37.4761, lng: 126.5957, area: "월미도", desc: "배낭여행객을 위한 경제적인 숙소" },
+            "차이나타운 선물가게": { lat: 37.4758, lng: 126.6176, area: "차이나타운", desc: "차이나타운 특색 기념품 전문점" },
+            "제물포 노래방": { lat: 37.4763, lng: 126.6169, area: "제물포시장", desc: "최신 음향시설을 갖춘 노래방" },
+            "개항로 문방구": { lat: 37.4766, lng: 126.6158, area: "개항로", desc: "옛날 추억이 담긴 레트로 문방구" },
+            "골목 족발집": { lat: 37.4770, lng: 126.6152, area: "골목상권", desc: "쫄깃한 족발로 유명한 골목 맛집" }
+        };
+
+        // stores.json에서 좌표 데이터 로드
+        async function loadStoreLocations() {
+            console.log('API에서 매장 데이터 로드 시도...');
+            try {
+                console.log('현재 URL:', window.location.href);
+                console.log('API URL:', '/api/stores');
+                
+                const response = await fetch('/api/stores');
+                console.log('API 응답 상태:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('API 응답 오류:', response.status, errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, response: ${errorText}`);
+                }
+                
+                const data = await response.json();
+                console.log('API 응답 데이터:', data);
+                
+                // 매장 이름을 키로 하는 좌표 객체 생성
+                if (data.stores && Array.isArray(data.stores)) {
+                    const apiStoreLocations = {};
+                    data.stores.forEach(store => {
+                        if (store.latitude && store.longitude) {
+                            apiStoreLocations[store.name] = {
+                                lat: store.latitude,
+                                lng: store.longitude,
+                                area: store.location || store.area,
+                                desc: store.description || store.desc || '특별한 혜택을 제공하는 매장입니다.'
+                            };
+                        }
+                    });
+                    
+                    // 기존 하드코딩 데이터와 병합
+                    storeLocations = {...storeLocations, ...apiStoreLocations};
+                    console.log('API에서 로드된 매장 좌표:', Object.keys(apiStoreLocations).length, '개');
+                    console.log('총 매장 좌표:', Object.keys(storeLocations).length, '개');
+                } else {
+                    console.log('API 응답에 stores 배열이 없음, 하드코딩 데이터 사용');
+                }
+                
+            } catch (error) {
+                console.error('매장 좌표 데이터 로드 실패:', error);
+                console.log('오류 상세:', error.message);
+                console.log('스택 트레이스:', error.stack);
+                console.log('하드코딩된 데이터를 사용합니다.');
+            }
+        }
+
+        // URL에서 패스 ID 추출
+        function getPassIdFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('passId');
+        }
+
+        // 세션 스토리지에서 패스 데이터 가져오기
+        function getPassDataFromSession() {
+            console.log('세션 스토리지 확인 중...');
+            const passData = sessionStorage.getItem('currentPassData');
+            console.log('세션 스토리지 원본 데이터:', passData);
+            
+            if (passData) {
+                try {
+                    const parsed = JSON.parse(passData);
+                    console.log('파싱된 패스 데이터:', parsed);
+                    return parsed;
+                } catch (error) {
+                    console.error('패스 데이터 파싱 실패:', error);
+                    return null;
+                }
+            }
+            
+            console.log('세션 스토리지에 패스 데이터가 없습니다');
+            return null;
+        }
+
+        // 패스 데이터 로드
+        async function loadPassData() {
+            console.log('패스 데이터 로드 시작');
+            
+            const passId = getPassIdFromUrl();
+            console.log('URL 패스 ID:', passId);
+            
+            // 먼저 세션 스토리지에서 데이터 확인
+            let passData = getPassDataFromSession();
+            
+            if (passData) {
+                console.log('세션 스토리지에서 데이터 찾음:', passData);
+                return passData;
+            }
+            
+            // 세션 스토리지에 데이터가 없으면 샘플 데이터 생성
+            console.log('세션 스토리지에 데이터 없음, 샘플 데이터 사용');
+            const sampleData = {
+                pass_id: 'sample_pass',
+                pass_type: '스탠다드 패스',
+                theme: '맛집 탐방',
+                stores: [
+                    { name: '월미도 횟집', desc: '신선한 해산물 요리 20% 할인' },
+                    { name: '차이나타운 만두집', desc: '전통 수제 만두 특별 혜택' },
+                    { name: '골목카페 힐링', desc: '커피 1+1 이벤트' },
+                    { name: '제물포 전통시장 떡집', desc: '전통 간식 체험 쿠폰' }
+                ]
+            };
+            
+            console.log('샘플 데이터 생성:', sampleData);
+            return sampleData;
+        }
+
+        // 카카오맵 초기화
+        function initializeMap() {
+            return new Promise((resolve, reject) => {
+                const script = document.createElement('script');
+                // 캐시 방지를 위한 타임스탬프 추가
+                const timestamp = new Date().getTime();
+                script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${apiKey}&autoload=false&_t=${timestamp}`;
+                
+                document.head.appendChild(script);
+
+                script.onload = () => {
+                    try {
+                        kakao.maps.load(() => {
+                            const mapContainer = document.getElementById('map');
+                            const mapOption = {
+                                center: new kakao.maps.LatLng(37.4760, 126.6163), // 인천 차이나타운 중심
+                                level: 5
+                            };
+                            map = new kakao.maps.Map(mapContainer, mapOption);
+                            console.log('카카오맵 초기화 성공');
+                            resolve();
+                        });
+                    } catch (error) {
+                        console.error('카카오맵 로드 중 오류:', error);
+                        reject(error);
+                    }
+                };
+
+                script.onerror = (error) => {
+                    console.error('카카오맵 스크립트 로드 실패:', error);
+                    console.error('API 키가 유효하지 않거나 도메인이 등록되지 않았을 수 있습니다.');
+                    reject(new Error('카카오맵 API 키 오류 - 새로운 API 키가 필요합니다'));
+                };
+            });
+        }
+
+        // 지도에 마커 추가
+        function addMarkersToMap(stores) {
+            // 기존 마커 제거
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+            
+            const bounds = new kakao.maps.LatLngBounds();
+            
+            stores.forEach((store, index) => {
+                const location = storeLocations[store.name];
+                
+                if (location) {
+                    const position = new kakao.maps.LatLng(location.lat, location.lng);
+                    
+                    // 커스텀 마커 생성
+                    const marker = new kakao.maps.Marker({
+                        position: position,
+                        map: map
+                    });
+                    
+                    // 인포윈도우 생성
+                    const infowindow = new kakao.maps.InfoWindow({
+                        content: `
+                            <div style="padding:10px; min-width:200px;">
+                                <strong style="color:#667eea;">${store.name}</strong><br>
+                                <small style="color:#666;">${location.area}</small><br>
+                                <span style="color:#333; font-size:0.9em;">${store.desc || '맛있는 음식과 특별한 경험을 제공합니다.'}</span>
+                            </div>
+                        `
+                    });
+                    
+                    // 마커 클릭 이벤트
+                    kakao.maps.event.addListener(marker, 'click', function() {
+                        infowindow.open(map, marker);
+                    });
+                    
+                    markers.push(marker);
+                    bounds.extend(position);
+                } else {
+                    console.warn('장소 좌표를 찾을 수 없습니다:', store.name);
+                }
+            });
+            
+            // 모든 마커가 보이도록 지도 범위 조정
+            if (stores.length > 0) {
+                map.setBounds(bounds);
+            }
+        }
+
+        // 장소 목록 렌더링
+        function renderPlacesList(stores) {
+            const container = document.getElementById('places-container');
+            container.innerHTML = '';
+            
+            stores.forEach((store, index) => {
+                const location = storeLocations[store.name];
+                const placeElement = document.createElement('div');
+                placeElement.className = 'place-item';
+                placeElement.innerHTML = `
+                    <div class="place-marker">${index + 1}</div>
+                    <div class="place-info">
+                        <div class="place-name">${store.name}</div>
+                        <div class="place-desc">${location ? location.area : '위치 정보 없음'} | ${store.desc || '맛있는 음식과 특별한 경험을 제공합니다.'}</div>
+                    </div>
+                `;
+                
+                // 클릭 시 해당 마커로 이동
+                placeElement.addEventListener('click', () => {
+                    if (location) {
+                        // 카카오맵이 있을 때와 없을 때 구분
+                        if (typeof highlightMapArea === 'function') {
+                            highlightMapArea(store.name);
+                        } else if (markers[index]) {
+                            const position = new kakao.maps.LatLng(location.lat, location.lng);
+                            map.setCenter(position);
+                            map.setLevel(3);
+                            
+                            // 해당 마커의 인포윈도우 열기
+                            kakao.maps.event.trigger(markers[index], 'click');
+                        }
+                    }
+                });
+                
+                container.appendChild(placeElement);
+            });
+        }
+
+        // 페이지 초기화
+        async function initializePage() {
+            console.log('페이지 초기화 시작');
+            document.getElementById('loading').style.display = 'block';
+            
+            try {
+                // 매장 좌표 데이터 로드
+                console.log('매장 좌표 로드 중...');
+                await loadStoreLocations();
+                
+                // 패스 데이터 로드
+                console.log('패스 데이터 로드 중...');
+                const passData = await loadPassData();
+                
+                if (!passData) {
+                    throw new Error('패스 데이터가 없습니다.');
+                }
+                
+                console.log('로드된 패스 데이터:', passData);
+                
+                // 패스 정보 업데이트
+                if (passData.pass_type && passData.theme) {
+                    document.getElementById('pass-title').textContent = 
+                        `${passData.pass_type} - ${passData.theme} 테마 패스의 장소들`;
+                }
+                
+                // 매장 목록 먼저 렌더링 (지도 없이도 표시)
+                if (passData.stores && passData.stores.length > 0) {
+                    renderPlacesList(passData.stores);
+                    console.log('매장 목록 렌더링 완료');
+                }
+                
+                // 카카오맵 초기화 시도
+                try {
+                    console.log('카카오맵 초기화 중...');
+                    await initializeMap();
+                    console.log('카카오맵 초기화 완료');
+                    
+                    // 지도 초기화 성공 시 마커 추가
+                    if (passData.stores && passData.stores.length > 0) {
+                        addMarkersToMap(passData.stores);
+                        console.log('지도 마커 추가 완료');
+                    }
+                } catch (mapError) {
+                    console.error('카카오맵 초기화 실패:', mapError);
+                    
+                    // 지도 컨테이너에 OpenStreetMap 대체 지도 표시
+                    const mapContainer = document.getElementById('map');
+                    mapContainer.innerHTML = `
+                        <div style="position: relative; width: 100%; height: 100%; background: #f0f8ff;">
+                            <!-- 지도 영역 -->
+                            <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                <div style="background: rgba(255,255,255,0.9); padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 500px;">
+                                    <div style="font-size: 4em; margin-bottom: 20px;">🗺️</div>
+                                    <div style="font-size: 1.5em; font-weight: bold; margin-bottom: 15px; color: #1976d2;">인천 동인천 관광지도</div>
+                                    <div style="font-size: 1em; color: #666; margin-bottom: 20px;">
+                                        카카오맵 API 연결 문제로 인해<br>
+                                        임시 지도를 표시하고 있습니다
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+                                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">
+                                            <strong style="color: #e65100;">차이나타운</strong><br>
+                                            <small style="color: #666;">전통 중식당과 문화 체험</small>
+                                        </div>
+                                        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; border-left: 4px solid #4caf50;">
+                                            <strong style="color: #2e7d32;">월미도</strong><br>
+                                            <small style="color: #666;">바다 전망과 해산물 요리</small>
+                                        </div>
+                                        <div style="background: #f3e5f5; padding: 15px; border-radius: 8px; border-left: 4px solid #9c27b0;">
+                                            <strong style="color: #7b1fa2;">개항로</strong><br>
+                                            <small style="color: #666;">역사적 건물과 카페</small>
+                                        </div>
+                                        <div style="background: #e1f5fe; padding: 15px; border-radius: 8px; border-left: 4px solid #03a9f4;">
+                                            <strong style="color: #0277bd;">골목상권</strong><br>
+                                            <small style="color: #666;">숨은 맛집과 전통 시장</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 매장 위치 표시 -->
+                            <div id="location-markers" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;">
+                                ${generateLocationMarkers(passData.stores)}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // 매장 목록에서 클릭했을 때 해당 영역 강조
+                    window.highlightMapArea = (storeName) => {
+                        const location = storeLocations[storeName];
+                        if (location) {
+                            console.log(`${storeName} 위치: ${location.area} 영역`);
+                            // 간단한 알림으로 위치 정보 표시
+                            alert(`📍 ${storeName}\\n위치: ${location.area}\\n${location.desc || ''}`);
+                        }
+                    };
+                }
+                
+                // 로딩 숨기고 메인 컨텐츠 표시
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('main-content').style.display = 'block';
+                console.log('페이지 초기화 완료');
+                
+            } catch (error) {
+                console.error('페이지 초기화 실패:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('error').style.display = 'block';
+                document.getElementById('error').textContent = error.message || '패스 데이터를 불러올 수 없습니다.';
+            }
+        }
+
+        // API 키 설정 도움말 표시
+        function showApiKeyHelp() {
+            alert(`🔧 카카오맵 API 키 설정 방법
+
+1. 카카오 개발자 콘솔 접속:
+   https://developers.kakao.com/console/app
+
+2. 애플리케이션 생성 또는 선택
+
+3. 플랫폼 설정 → Web 플랫폼 추가
+
+4. 사이트 도메인 등록:
+   - http://127.0.0.1:8080
+   - http://localhost:8080
+   - 기타 사용할 도메인
+
+5. JavaScript 키를 복사하여 코드에 적용
+
+현재 사용 중인 키: ${apiKey}
+현재 상태: API 키 권한 오류 (403)`);
+        }
+
+        // 테스트용 샘플 데이터 함수
+        function testWithSampleData() {
+            console.log('샘플 데이터로 테스트 시작');
+            
+            const sampleData = {
+                pass_id: 'test_pass_123',
+                pass_type: '스탠다드 패스',
+                theme: '맛집 탐방',
+                stores: [
+                    { name: '월미도 횟집', desc: '신선한 해산물 요리 20% 할인' },
+                    { name: '차이나타운 만두집', desc: '전통 수제 만두 특별 혜택' },
+                    { name: '골목카페 힐링', desc: '커피 1+1 이벤트' },
+                    { name: '제물포 전통시장 떡집', desc: '전통 간식 체험 쿠폰' },
+                    { name: '바다풍경 펜션카페', desc: '바다 뷰 카페 디저트 할인' }
+                ]
+            };
+            
+            // 세션 스토리지에 저장
+            sessionStorage.setItem('currentPassData', JSON.stringify(sampleData));
+            console.log('샘플 데이터 저장 완료');
+            
+            // 페이지 새로고침
+            location.reload();
+        }
+
+        // 페이지 로드 시 초기화 실행
+        document.addEventListener('DOMContentLoaded', initializePage);
+    </script>
+</body>
+</html>
