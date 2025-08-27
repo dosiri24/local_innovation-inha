@@ -278,147 +278,147 @@
     },
     {
       "id": "S024",
-      "name": "골목 순대국집",
+      "name": "소천 가마솥 순대",
       "category": "음식점",
       "area": "골목상권",
       "themes": ["순대국", "서민음식", "따뜻함"],
       "desc": "할머니 손맛을 자랑하는 순대국 전문점",
       "reviews": 127,
       "is_franchise": false,
-      "latitude": 37.4765,
-      "longitude": 126.6157
+      "latitude": 37.47201151193725,
+      "longitude": 126.62243839144485
     },
     {
       "id": "S025",
-      "name": "인천역 편의점",
+      "name": "스토리웨이 인천역점",
       "category": "편의점",
       "area": "인천역",
       "themes": ["편의점", "24시간", "교통"],
       "desc": "인천역 내 24시간 편의점",
       "reviews": 189,
       "is_franchise": true,
-      "latitude": 37.4753,
-      "longitude": 126.6170
+      "latitude": 37.47589653154393,
+      "longitude": 126.61703911145705
     },
     {
       "id": "S026",
-      "name": "월미도 해물찜",
+      "name": "원조부산활어회전문점",
       "category": "음식점",
       "area": "월미도",
       "themes": ["해물찜", "해산물", "매콤"],
       "desc": "신선한 해물로 만든 매콤한 해물찜 전문점",
       "reviews": 267,
       "is_franchise": false,
-      "latitude": 37.4758,
-      "longitude": 126.5956
+      "latitude": 37.473935416393665,
+      "longitude": 126.59716567744273
     },
     {
       "id": "S027",
-      "name": "차이나타운 월병집",
+      "name": "차이나타운 원보병가",
       "category": "제과점",
       "area": "차이나타운",
       "themes": ["월병", "중국과자", "전통"],
       "desc": "전통 방식으로 만든 월병과 중국 과자 전문점",
       "reviews": 89,
       "is_franchise": false,
-      "latitude": 37.4756,
-      "longitude": 126.6172
+      "latitude": 37.47529455208249,
+      "longitude": 126.6193963212099
     },
     {
       "id": "S028",
-      "name": "제물포 꽃집",
+      "name": "동일꽃화원",
       "category": "꽃집",
       "area": "제물포시장",
       "themes": ["꽃", "선물", "기념일"],
       "desc": "신선한 꽃과 화분을 판매하는 동네 꽃집",
       "reviews": 72,
       "is_franchise": false,
-      "latitude": 37.4761,
-      "longitude": 126.6164
+      "latitude": 37.4638303054716,
+      "longitude": 126.65917779283436
     },
     {
       "id": "S029",
-      "name": "개항로 타로카페",
+      "name": "실타래 타로",
       "category": "카페",
-      "area": "개항로",
+      "area": "골목상권",
       "themes": ["타로", "점술", "신비"],
-      "desc": "타로 상담을 받을 수 있는 특별한 카페",
+      "desc": "타로 상담을 받을 수 있는 특별한 장소",
       "reviews": 156,
       "is_franchise": false,
-      "latitude": 37.4765,
-      "longitude": 126.6159
+      "latitude": 37.470795836937675,
+      "longitude": 126.62640541780281
     },
     {
       "id": "S030",
-      "name": "골목 김밥천국",
+      "name": "김밥천국 동인천점",
       "category": "음식점",
-      "area": "골목상권",
+      "area": "동인천",
       "themes": ["김밥", "분식", "24시간"],
       "desc": "24시간 운영하는 김밥 전문점",
       "reviews": 341,
       "is_franchise": true,
-      "latitude": 37.4769,
-      "longitude": 126.6153
+      "latitude": 37.475038056622196,
+      "longitude": 126.63060328419206
     },
     {
       "id": "S031",
-      "name": "월미도 게스트하우스",
+      "name": "월미도 모텔",
       "category": "숙박",
       "area": "월미도",
-      "themes": ["게스트하우스", "배낭여행", "저렴"],
+      "themes": ["모텔", "배낭여행", "저렴"],
       "desc": "배낭여행객을 위한 경제적인 숙소",
       "reviews": 234,
       "is_franchise": false,
-      "latitude": 37.4761,
-      "longitude": 126.5957
+      "latitude": 37.473810731870095,
+      "longitude": 126.59731709301232
     },
     {
       "id": "S032",
-      "name": "차이나타운 선물가게",
+      "name": "차이나타운 선물가게 孔家",
       "category": "기념품",
       "area": "차이나타운",
       "themes": ["기념품", "선물", "관광"],
       "desc": "차이나타운 특색 기념품 전문점",
       "reviews": 145,
       "is_franchise": false,
-      "latitude": 37.4758,
-      "longitude": 126.6176
+      "latitude": 37.478245159711086,
+      "longitude": 126.61961415741513
     },
     {
       "id": "S033",
-      "name": "제물포 노래방",
+      "name": "제물포 드루와노래방",
       "category": "오락",
       "area": "제물포시장",
       "themes": ["노래방", "오락", "친구"],
       "desc": "최신 음향시설을 갖춘 노래방",
       "reviews": 198,
       "is_franchise": false,
-      "latitude": 37.4763,
-      "longitude": 126.6169
+      "latitude": 37.46566541175356,
+      "longitude": 126.65835025304366
     },
     {
       "id": "S034",
-      "name": "개항로 문방구",
+      "name": "대동학생백화점",
       "category": "문구점",
       "area": "개항로",
       "themes": ["문구", "학용품", "레트로"],
-      "desc": "옛날 추억이 담긴 레트로 문방구",
+      "desc": "레트로적이고 이색적인 문구가 많은 문구점",
       "reviews": 56,
       "is_franchise": false,
-      "latitude": 37.4766,
-      "longitude": 126.6158
+      "latitude": 37.47520478821763,
+      "longitude": 126.6293415442479
     },
     {
       "id": "S035",
-      "name": "골목 족발집",
+      "name": "개항로 명월집",
       "category": "음식점",
-      "area": "골목상권",
+      "area": "개항로",
       "themes": ["족발", "보쌈", "야식"],
       "desc": "쫄깃한 족발로 유명한 골목 맛집",
       "reviews": 289,
       "is_franchise": false,
-      "latitude": 37.4770,
-      "longitude": 126.6152
+      "latitude": 37.47200350306382,
+      "longitude": 126.62281568711441
     }
   ]
 }
