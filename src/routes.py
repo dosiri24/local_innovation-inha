@@ -3,7 +3,6 @@ Flask 라우트 정의
 """
 from flask import render_template, request, jsonify, send_file, send_from_directory, session, redirect, url_for
 import os
-from datetime import datetime
 from models import UserPrefs, PassType, Theme
 from services import (
     load_stores, load_benefits, load_themes, generate_pass, 
@@ -110,12 +109,6 @@ def register_routes(app):
         """지도 페이지"""
         kakao_api_key = os.getenv('KAKAO_API_KEY', '')
         return render_template('map.html', kakao_api_key=kakao_api_key)
-
-    @app.route('/test/kakao')
-    def kakao_test():
-        """카카오맵 API 테스트 페이지"""
-        kakao_api_key = os.getenv('KAKAO_API_KEY', '')
-        return render_template('kakao_test.html', kakao_api_key=kakao_api_key)
 
     @app.route('/pass/<pass_id>')
     def view_pass(pass_id):
@@ -292,106 +285,24 @@ def register_routes(app):
         """테스트용 간단한 API"""
         return jsonify({'message': 'API가 정상 작동합니다!', 'success': True})
 
-    @app.route('/api/kakao/test')
-    def kakao_api_test():
-        """카카오 API 키 상태 확인"""
-        kakao_api_key = os.getenv('KAKAO_API_KEY', '')
-        
-        result = {
-            'api_key_exists': bool(kakao_api_key),
-            'api_key_length': len(kakao_api_key) if kakao_api_key else 0,
-            'api_key_preview': kakao_api_key[:10] + '...' if len(kakao_api_key) > 10 else kakao_api_key,
-            'current_host': request.host,
-            'current_url': request.url,
-            'user_agent': request.headers.get('User-Agent', ''),
-            'timestamp': str(datetime.now())
-        }
-        
-        # 간단한 카카오 API 테스트 (REST API)
-        if kakao_api_key:
-            try:
-                import requests
-                response = requests.get(
-                    'https://dapi.kakao.com/v2/local/search/keyword.json',
-                    headers={'Authorization': f'KakaoAK {kakao_api_key}'},
-                    params={'query': '인천'},
-                    timeout=5
-                )
-                
-                result['rest_api_test'] = {
-                    'status_code': response.status_code,
-                    'success': response.status_code == 200,
-                    'error': None if response.status_code == 200 else f'HTTP {response.status_code}'
-                }
-                
-                if response.status_code == 200:
-                    data = response.json()
-                    result['rest_api_test']['results_count'] = len(data.get('documents', []))
-                
-            except Exception as e:
-                result['rest_api_test'] = {
-                    'success': False,
-                    'error': str(e)
-                }
-        else:
-            result['rest_api_test'] = {
-                'success': False,
-                'error': 'API 키가 설정되지 않음'
-            }
-        
-        return jsonify(result)
-
     @app.route('/api/stores')
     def get_stores():
         """매장 정보 반환 (좌표 포함)"""
         try:
-            stores_data = load_stores()
-            
-            # 하드코딩된 좌표 데이터 추가
-            store_locations = {
-                "월미도 횟집": {"lat": 37.4759, "lng": 126.5954, "area": "월미도"},
-                "개항로 책방": {"lat": 37.4763, "lng": 126.6163, "area": "개항로"},
-                "차이나타운 만두집": {"lat": 37.4756, "lng": 126.6173, "area": "차이나타운"},
-                "골목카페 힐링": {"lat": 37.4765, "lng": 126.6158, "area": "골목상권"},
-                "스타벅스 인천역점": {"lat": 37.4755, "lng": 126.6169, "area": "인천역"},
-                "제물포 전통시장 떡집": {"lat": 37.4761, "lng": 126.6167, "area": "제물포시장"},
-                "바다풍경 펜션카페": {"lat": 37.4758, "lng": 126.5951, "area": "월미도"},
-                "골목 수제버거": {"lat": 37.4767, "lng": 126.6155, "area": "골목상권"},
-                "전통 한옥카페": {"lat": 37.4764, "lng": 126.6161, "area": "개항로"},
-                "맥도날드 인천점": {"lat": 37.4754, "lng": 126.6171, "area": "인천역"},
-                "골목 떡볶이": {"lat": 37.4766, "lng": 126.6156, "area": "골목상권"},
-                "제물포 갤러리카페": {"lat": 37.4762, "lng": 126.6165, "area": "개항로"},
-                "바다소리 펜션": {"lat": 37.4757, "lng": 126.5952, "area": "월미도"},
-                "차이나타운 약재상": {"lat": 37.4757, "lng": 126.6175, "area": "차이나타운"},
-                "월미공원 사진관": {"lat": 37.4760, "lng": 126.5955, "area": "월미도"},
-            }
-            
-            # 매장 데이터에 좌표 정보 추가
-            enhanced_stores = []
-            for store in stores_data:
-                store_dict = store.__dict__.copy() if hasattr(store, '__dict__') else store
-                store_name = store_dict.get('name', '')
-                
-                if store_name in store_locations:
-                    location_data = store_locations[store_name]
-                    store_dict.update({
-                        'latitude': location_data['lat'],
-                        'longitude': location_data['lng'],
-                        'location': location_data['area']
-                    })
-                
-                enhanced_stores.append(store_dict)
+            from services import load_stores_raw
+            stores_data = load_stores_raw()  # 원본 데이터 사용 (좌표 포함)
             
             return jsonify({
                 'success': True,
-                'stores': enhanced_stores,
-                'count': len(enhanced_stores)
+                'stores': stores_data,
+                'count': len(stores_data)
             })
             
         except Exception as e:
             print(f"[오류] 매장 데이터 로드 실패: {e}")
             return jsonify({
                 'error': f'매장 데이터를 불러올 수 없습니다: {str(e)}',
+                'success': False,
                 'stores': [],
                 'count': 0
             }), 500

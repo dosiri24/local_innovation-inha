@@ -475,6 +475,7 @@
 
             <div class="buttons-container">
                 <button class="reset-btn" onclick="resetForm()">🔄 다시 만들기</button>
+                <button class="back-btn" onclick="viewOnMap()" style="background: linear-gradient(45deg, #4caf50, #2e7d32);">🗺️ 지도에서 보기</button>
                 <a href="/main" class="back-btn">🏠 메인으로</a>
                 <a href="/play" class="back-btn" style="background: linear-gradient(45deg, #667eea, #764ba2);">🎫 내 패스 보기</a>
             </div>
@@ -724,6 +725,39 @@
             document.querySelectorAll('.theme-tag').forEach(el => el.classList.remove('selected'));
             document.querySelectorAll('.pass-type').forEach(el => el.classList.remove('selected'));
             document.querySelector('.pass-type[data-type="light"]').classList.add('selected');
+        }
+
+        // 지도에서 보기
+        function viewOnMap() {
+            // 현재 생성된 패스 데이터를 세션 스토리지에 저장
+            const currentPassData = {
+                pass_id: 'generated_' + Date.now(),
+                pass_type: selectedPassType === 'light' ? '라이트 패스' : 
+                          selectedPassType === 'premium' ? '프리미엄 패스' : '시민 패스',
+                theme: selectedThemes.join(', ') || '맞춤 추천',
+                created_at: new Date().toISOString(),
+                stores: []
+            };
+
+            // 생성된 혜택 목록에서 매장 정보 추출
+            const benefitElements = document.querySelectorAll('.benefit-item');
+            benefitElements.forEach((element, index) => {
+                const storeName = element.querySelector('.benefit-store').textContent.replace(/^\d+\.\s*/, '');
+                const benefitDesc = element.querySelector('.benefit-desc').textContent.replace(/^🎁\s*/, '');
+                
+                currentPassData.stores.push({
+                    name: storeName,
+                    desc: benefitDesc
+                });
+            });
+
+            console.log('패스 데이터를 세션 스토리지에 저장:', currentPassData);
+            
+            // 세션 스토리지에 저장
+            sessionStorage.setItem('currentPassData', JSON.stringify(currentPassData));
+            
+            // 지도 페이지로 이동
+            window.location.href = '/map';
         }
     </script>
 </body>
