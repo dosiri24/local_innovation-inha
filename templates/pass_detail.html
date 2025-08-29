@@ -124,6 +124,180 @@
         .back-btn:hover {
             background: #5a67d8;
         }
+        
+        /* map.html에서 가져온 기능 스타일 */
+        .filter-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 20px;
+            background: white;
+            color: #64748b;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+            transform: translateY(-1px);
+        }
+        
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .legend {
+            background: #f8f9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .legend-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .legend-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-marker {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .legend-text {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            text-align: center;
+        }
+        
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .stat-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+        }
+        
+        .features-section {
+            margin: 30px 0;
+        }
+        
+        .features-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* 지도 관련 스타일 */
+        .map-container {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin: 30px 0;
+        }
+        
+        .map-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .map-header h3 {
+            margin: 0;
+            font-size: 20px;
+        }
+        
+        #map {
+            width: 100%;
+            height: 400px;
+        }
+        
+        .route-controls {
+            padding: 20px;
+            background: #f8f9ff;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .route-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .route-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        .route-btn.active {
+            background: #4facfe;
+        }
+        
+        #route-info {
+            background: white;
+            margin: 10px 20px;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -154,10 +328,116 @@
                 </div>
             </div>
             
+            <div class="features-section">
+                <div class="features-title">🎯 패스 기능</div>
+                
+                <!-- 카테고리 필터 -->
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-category="all">전체</button>
+                    <button class="filter-btn" data-category="음식점">음식점</button>
+                    <button class="filter-btn" data-category="카페">카페</button>
+                    <button class="filter-btn" data-category="서점">서점</button>
+                    <button class="filter-btn" data-category="숙박">숙박</button>
+                    <button class="filter-btn" data-category="체험">체험</button>
+                    <button class="filter-btn" data-category="기타">기타</button>
+                </div>
+                
+                <!-- 카테고리별 범례 -->
+                <div class="legend">
+                    <div class="legend-title">카테고리별 분류</div>
+                    <div class="legend-items">
+                        <div class="legend-item">
+                            <div class="legend-marker" style="background: #ff6b6b;"></div>
+                            <span class="legend-text">음식점</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-marker" style="background: #4ecdc4;"></div>
+                            <span class="legend-text">카페</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-marker" style="background: #45b7d1;"></div>
+                            <span class="legend-text">서점</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-marker" style="background: #96ceb4;"></div>
+                            <span class="legend-text">숙박</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-marker" style="background: #feca57;"></div>
+                            <span class="legend-text">체험</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-marker" style="background: #a29bfe;"></div>
+                            <span class="legend-text">기타</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 통계 정보 -->
+                    <div class="stats">
+                        <div class="stat-item">
+                            <div class="stat-number" id="total-stores">{{ pass_data.stores|length }}</div>
+                            <div class="stat-label">총 매장</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="visible-stores">{{ pass_data.stores|length }}</div>
+                            <div class="stat-label">표시된 매장</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number" id="selected-category">전체</div>
+                            <div class="stat-label">선택된 카테고리</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 패스 데이터를 JavaScript에서 사용할 수 있도록 저장 -->
+            <script type="application/json" id="pass-store-data">
+                [
+                {% for store in pass_data.stores %}
+                {
+                    "name": "{{ store.name|e }}",
+                    "category": "{{ store.category|e }}",
+                    "latitude": {% if store.latitude %}{{ store.latitude }}{% else %}null{% endif %},
+                    "longitude": {% if store.longitude %}{{ store.longitude }}{% else %}null{% endif %}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+                ]
+            </script>
+            
+            <!-- 실제 stores.json에서 위치 정보를 가져오는 스크립트 -->
+            <script type="application/json" id="all-stores-data">
+                [
+                {% for store_data in all_stores_with_coords %}
+                {
+                    "name": "{{ store_data.name|e }}",
+                    "category": "{{ store_data.category|e }}",
+                    "latitude": {% if store_data.latitude %}{{ store_data.latitude }}{% else %}null{% endif %},
+                    "longitude": {% if store_data.longitude %}{{ store_data.longitude }}{% else %}null{% endif %}
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+                ]
+            </script>
+            
+            <!-- 지도 섹션 추가 -->
+            <div class="map-container">
+                <div class="map-header">
+                    <h3>🗺️ 패스 장소 지도</h3>
+                </div>
+                
+                <!-- 디버그 정보 -->
+                <div id="map"></div>
+                <div class="route-controls">
+                    <button class="route-btn" id="show-walking" onclick="showWalkingRoute()">🚶 도보 경로</button>
+                    <button class="route-btn" id="show-driving" onclick="showDrivingRoute()">🚗 자동차 경로</button>
+                    <button class="route-btn" onclick="clearRoutes()">🗑️ 경로 지우기</button>
+                </div>
+                <div id="route-info"></div>
+            </div>
+            
             <div class="benefits">
                 <h3>🏪 포함된 매장</h3>
                 {% for store in pass_data.stores %}
-                <div class="benefit-item">
+                <div class="benefit-item store-item" data-category="{{ store.category }}">
                     <div class="store-name">{{ store.name }}</div>
                     <div class="benefit-desc">{{ store.description }}</div>
                     <div class="benefit-value">📍 {{ store.location }}</div>
@@ -168,7 +448,7 @@
             <div class="benefits">
                 <h3>🎁 포함된 혜택</h3>
                 {% for benefit in pass_data.benefits %}
-                <div class="benefit-item">
+                <div class="benefit-item benefit-only">
                     <div class="store-name">{{ benefit.store_name }}</div>
                     <div class="benefit-desc">{{ benefit.description }}</div>
                     <div class="benefit-value">🎯 {{ benefit.benefit_type }}</div>
@@ -188,5 +468,665 @@
             제물포GO 패스 - 인천 제물포구의 숨은 명소를 발견하세요
         </div>
     </div>
+    
+    <!-- 카카오 지도 API 로드 (비동기 방식으로 변경) -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=a67274a743814b8d146d016ae4ae47d8&libraries=services&autoload=false"></script>
+    
+    <script>
+        // 전역 변수
+        let map = null;
+        let markers = [];
+        let routePolylines = { walking: [], driving: [] };
+        
+        // 두 지점 간의 직선 거리 계산 (km)
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371; // 지구 반지름 (km)
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+        
+        // 가장 가까운 이웃 알고리즘으로 최적 경로 찾기
+        function findOptimalRoute(markerItems) {
+            if (markerItems.length < 2) return markerItems;
+            
+            const unvisited = [...markerItems]; // 방문하지 않은 마커들
+            const route = []; // 최적 경로
+            
+            // 첫 번째 마커를 시작점으로 선택 (또는 사용자가 선택한 시작점)
+            let current = unvisited[0];
+            route.push(current);
+            unvisited.splice(0, 1);
+            
+            // 모든 마커를 방문할 때까지 반복
+            while (unvisited.length > 0) {
+                let nearest = null;
+                let nearestDistance = Infinity;
+                let nearestIndex = -1;
+                
+                const currentPos = current.marker.getPosition();
+                
+                // 현재 위치에서 가장 가까운 마커 찾기
+                for (let i = 0; i < unvisited.length; i++) {
+                    const markerPos = unvisited[i].marker.getPosition();
+                    const distance = calculateDistance(
+                        currentPos.getLat(), currentPos.getLng(),
+                        markerPos.getLat(), markerPos.getLng()
+                    );
+                    
+                    if (distance < nearestDistance) {
+                        nearestDistance = distance;
+                        nearest = unvisited[i];
+                        nearestIndex = i;
+                    }
+                }
+                
+                // 가장 가까운 마커를 경로에 추가
+                route.push(nearest);
+                unvisited.splice(nearestIndex, 1);
+                current = nearest;
+            }
+            
+            return route;
+        }
+        
+        // 카테고리별 색상 매핑
+        const categoryColors = {
+            '음식점': '#ff6b6b',
+            '카페': '#4ecdc4', 
+            '서점': '#45b7d1',
+            '숙박': '#96ceb4',
+            '체험': '#feca57',
+            '기타': '#a29bfe'
+        };
+        
+        // 지도 초기화 (실제 패스 데이터 사용)
+        function initMap() {
+            console.log('지도 초기화 시작');
+            // 카카오 SDK 확인
+            if (typeof kakao === 'undefined') {
+                console.log('카카오 SDK 로딩 대기 중...');
+                setTimeout(initMap, 1000);
+                return;
+            }
+            
+            console.log('카카오 SDK 준비됨');
+            // 지도 초기화
+            kakao.maps.load(() => {
+                try {
+                    console.log('카카오 지도 로드 완료');
+                    const mapContainer = document.getElementById('map');
+                    if (!mapContainer) {
+                        console.error('지도 컨테이너를 찾을 수 없습니다');
+                        return;
+                    }
+                    
+                    const mapOption = {
+                        center: new kakao.maps.LatLng(37.4759, 126.6168), // 제물포구 중심
+                        level: 5
+                    };
+                    
+                    map = new kakao.maps.Map(mapContainer, mapOption);
+                    console.log('지도 생성 완료');
+                    
+                    // 실제 매장 마커 추가
+                    addPassStoreMarkers();
+                    
+                    // 지도 클릭 및 키보드 이벤트 설정
+                    setupMapClickEvent();
+                    setupKeyboardEvents();
+                    
+                } catch (error) {
+                    console.error('지도 초기화 오류:', error);
+                }
+            });
+        }
+        
+        // 패스 매장 마커 추가
+        function addPassStoreMarkers() {
+            try {
+                // JSON 데이터에서 매장 정보 읽기
+                const storeDataScript = document.getElementById('pass-store-data');
+                if (!storeDataScript) {
+                    console.error('pass-store-data 요소를 찾을 수 없습니다');
+                    return;
+                }
+                
+                const passStores = JSON.parse(storeDataScript.textContent);
+                console.log('로드된 매장 데이터:', passStores);
+                
+                // 전체 stores 데이터 로드 (위치 정보 포함)
+                const allStoresScript = document.getElementById('all-stores-data');
+                const allStores = allStoresScript ? JSON.parse(allStoresScript.textContent) : [];
+                console.log('전체 stores 데이터:', allStores);
+                
+                let markerCount = 0;
+                passStores.forEach((store, index) => {
+                    console.log(`매장 ${index + 1}: ${store.name}, 좌표: ${store.latitude}, ${store.longitude}`);
+                    
+                    let coordinates = {lat: store.latitude, lng: store.longitude};
+                    
+                    // 위치 정보가 없으면 전체 stores에서 찾기
+                    if (!coordinates.lat || !coordinates.lng) {
+                        const matchedStore = allStores.find(s => s.name === store.name);
+                        if (matchedStore && matchedStore.latitude && matchedStore.longitude) {
+                            coordinates = {lat: matchedStore.latitude, lng: matchedStore.longitude};
+                            console.log(`${store.name}의 좌표를 전체 데이터에서 찾음: ${coordinates.lat}, ${coordinates.lng}`);
+                        }
+                    }
+                    
+                    if (coordinates && coordinates.lat && coordinates.lng) {
+                        const position = new kakao.maps.LatLng(coordinates.lat, coordinates.lng);
+                        const marker = new kakao.maps.Marker({
+                            position: position,
+                            map: map
+                        });
+                        
+                        console.log(`마커 ${index + 1} 생성됨: ${store.name}`);
+                        
+                        // 실제 매장 카테고리 사용
+                        const category = store.category;
+                        const color = categoryColors[category] || '#a29bfe';
+                        
+                        const infoWindow = new kakao.maps.InfoWindow({
+                            content: `
+                                <div style="padding: 15px; min-width: 280px; max-width: 350px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                                    <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                        <div style="width: 24px; height: 24px; background: ${color}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 12px; margin-right: 10px;">${index + 1}</div>
+                                        <h3 style="margin: 0; color: #1a202c; font-size: 16px; font-weight: bold;">${store.name}</h3>
+                                    </div>
+                                    <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                                        <span style="background: ${color}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500;">${category}</span>
+                                        <span style="color: #64748b; font-size: 12px;">제물포구</span>
+                                    </div>
+                                    <p style="margin: 8px 0; color: #4a5568; font-size: 14px; line-height: 1.5;">선택된 패스에 포함된 매장입니다.</p>
+                                </div>
+                            `,
+                            removable: true // 기본 X 버튼 활성화
+                        });
+                        
+                        // 마커 클릭 이벤트
+                        kakao.maps.event.addListener(marker, 'click', function() {
+                            console.log(`마커 클릭됨: ${store.name}`);
+                            // 다른 InfoWindow들 모두 닫기
+                            closeAllInfoWindows();
+                            // 현재 InfoWindow 열기
+                            infoWindow.open(map, marker);
+                            console.log(`InfoWindow 열림: ${store.name}`);
+                            // 현재 열린 InfoWindow를 전역 변수에 저장
+                            window.currentInfoWindow = infoWindow;
+                        });
+                        
+                        markers.push({ marker: marker, infoWindow: infoWindow });
+                        markerCount++;
+                        console.log(`마커 완료: ${store.name}, 총 마커 수: ${markerCount}`);
+                    } else {
+                        console.log(`위치 정보 없음: ${store.name} - 마커 생성 불가`);
+                    }
+                });
+                
+                console.log(`마커 추가 완료: 총 ${markerCount}개의 마커가 생성됨`);
+                
+            } catch (error) {
+                console.error('마커 추가 오류:', error);
+            }
+        }
+        
+        // 모든 InfoWindow 닫기 함수
+        function closeAllInfoWindows() {
+            markers.forEach(item => {
+                if (item.infoWindow) {
+                    item.infoWindow.close();
+                }
+            });
+            window.currentInfoWindow = null;
+        }
+        
+
+        
+        // 지도 클릭 시 모든 InfoWindow 닫기
+        function setupMapClickEvent() {
+            if (map) {
+                kakao.maps.event.addListener(map, 'click', function(mouseEvent) {
+                    closeAllInfoWindows();
+                });
+            }
+        }
+        
+        // ESC 키로 InfoWindow 닫기
+        function setupKeyboardEvents() {
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape') {
+                    closeAllInfoWindows();
+                }
+            });
+        }
+        
+        // 매장 좌표 매핑 (별도 변수로 분리)
+        const storeCoordinatesMap = {
+            '월미도 횟집': { lat: 37.47397220206862, lng: 126.59720509293857 },
+            '문학소매점': { lat: 37.47350937581703, lng: 126.62085286165087 },
+            '원보만두': { lat: 37.47534097822377, lng: 126.6191021259768 },
+            '블루하라': { lat: 37.474785094782234, lng: 126.6197545384214 },
+            '컴포즈커피 인천역점': { lat: 37.47575138206574, lng: 126.6175752858422 },
+            '떡백화점': { lat: 37.464676048899506, lng: 126.65645170902988 },
+            '미투커피': { lat: 37.47477702009911, lng: 126.59773755541127 },
+            '후즈버거': { lat: 37.47876840511246, lng: 126.6350534344891 },
+            '관동오리진': { lat: 37.47380588507801, lng: 126.62060883722839 },
+            '맥도날드 동인천점': { lat: 37.474631420013694, lng: 126.63049416454899 },
+            '유성분식': { lat: 37.47143909737978, lng: 126.62694167021796 },
+            '갤러리지오카페': { lat: 37.47221966205152, lng: 126.62093231910521 },
+            '풀문관광호텔': { lat: 37.476648940968005, lng: 126.59910808078902 },
+            '대원한약방': { lat: 37.47078856011132, lng: 126.62395964339234 },
+            '달빛담쟁이': { lat: 37.472949720718084, lng: 126.5975806118575 },
+            '제물포 수제 맥주집': { lat: 37.4762, lng: 126.6168 },
+            '오빈티지': { lat: 37.47213825583188, lng: 126.6265115970335 },
+            '꼬끼오치킨': { lat: 37.46290366258156, lng: 126.65705122072016 },
+            '차이나타운 짜장면집 신': { lat: 37.476929158354224, lng: 126.61929443594198 },
+            '월미도래미': { lat: 37.475215698285076, lng: 126.59793380070307 },
+            '목향 공방': { lat: 37.466464323960665, lng: 126.65912523900246 },
+            '한미서점': { lat: 37.47266789792542, lng: 126.6367270113497 },
+            '소천 가마솥 순대': { lat: 37.47201151193725, lng: 126.62243839144485 },
+            '원조부산활어회전문점': { lat: 37.473935416393665, lng: 126.59716567744273 },
+            '차이나타운 원보병가': { lat: 37.47529455208249, lng: 126.6193963212099 },
+            '동일꽃화원': { lat: 37.4638303054716, lng: 126.65917779283436 },
+            '실타래 타로': { lat: 37.470795836937675, lng: 126.62640541780281 },
+            '김밥천국 동인천점': { lat: 37.475038056622196, lng: 126.63060328419206 },
+            '월미도 모텔': { lat: 37.473810731870095, lng: 126.59731709301232 },
+            '차이나타운 선물가게 孔家': { lat: 37.478245159711086, lng: 126.61961415741513 },
+            '제물포 드루와노래방': { lat: 37.46566541175356, lng: 126.65835025304366 },
+            '대동학생백화점': { lat: 37.47520478821763, lng: 126.6293415442479 },
+            '개항로 명월집': { lat: 37.47200350306382, lng: 126.62281568711441 }
+        };
+        
+        
+        // 도보 경로 표시 (최적 경로 + 실제 API 사용)
+        function showWalkingRoute() {
+            if (markers.length < 2) {
+                alert('최소 2개 이상의 장소가 필요합니다.');
+                return;
+            }
+            
+            clearRoutes();
+            
+            const routeBtn = document.getElementById('show-walking');
+            if (routeBtn) {
+                routeBtn.classList.add('active');
+                routeBtn.textContent = '🚶 경로 최적화 중...';
+            }
+            
+            // 최적 경로 계산
+            const optimizedRoute = findOptimalRoute(markers);
+            
+            // 최적화된 경로로 순서대로 연결하는 경로 생성
+            const routePromises = [];
+            
+            for (let i = 0; i < optimizedRoute.length - 1; i++) {
+                const startMarkerItem = optimizedRoute[i];
+                const endMarkerItem = optimizedRoute[i + 1];
+                
+                const startPos = startMarkerItem.marker.getPosition();
+                const endPos = endMarkerItem.marker.getPosition();
+                
+                const routeData = {
+                    start: {
+                        lat: startPos.getLat(),
+                        lng: startPos.getLng(),
+                        name: `장소 ${i + 1}`
+                    },
+                    end: {
+                        lat: endPos.getLat(),
+                        lng: endPos.getLng(),
+                        name: `장소 ${i + 2}`
+                    }
+                };
+                
+                const promise = fetch('/api/directions/walking', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(routeData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    return { segmentIndex: i, data: data };
+                })
+                .catch(error => {
+                    return { segmentIndex: i, data: { success: false, error: error.message } };
+                });
+                
+                routePromises.push(promise);
+            }
+            
+            // 모든 구간의 경로 완료 대기
+            Promise.all(routePromises)
+                .then(results => {
+                    let totalDistance = 0;
+                    let totalDuration = 0;
+                    let successfulSegments = 0;
+                    
+                    results.forEach((result, index) => {
+                        const { segmentIndex, data } = result;
+                        
+                        if (data.success && data.path && data.path.length > 1) {
+                            // 경로 폴리라인 생성
+                            const path = data.path.map(point => new kakao.maps.LatLng(point.lat, point.lng));
+                            
+                            const polyline = new kakao.maps.Polyline({
+                                path: path,
+                                strokeWeight: 4,
+                                strokeColor: '#2563eb',
+                                strokeOpacity: 0.8,
+                                strokeStyle: 'solid'
+                            });
+                            
+                            polyline.setMap(map);
+                            routePolylines.walking.push(polyline);
+                            
+                            totalDistance += data.distance || 0;
+                            totalDuration += data.duration || 0;
+                            successfulSegments++;
+                            
+                        } else {
+                            // 실패한 구간은 직선으로 연결
+                            const startMarkerItem = optimizedRoute[segmentIndex];
+                            const endMarkerItem = optimizedRoute[segmentIndex + 1];
+                            
+                            const fallbackPath = [
+                                startMarkerItem.marker.getPosition(),
+                                endMarkerItem.marker.getPosition()
+                            ];
+                            
+                            const fallbackPolyline = new kakao.maps.Polyline({
+                                path: fallbackPath,
+                                strokeWeight: 3,
+                                strokeColor: '#94a3b8',
+                                strokeOpacity: 0.6,
+                                strokeStyle: 'shortdash'
+                            });
+                            
+                            fallbackPolyline.setMap(map);
+                            routePolylines.walking.push(fallbackPolyline);
+                        }
+                    });
+                    
+                    // 버튼 상태 업데이트
+                    if (routeBtn) {
+                        routeBtn.textContent = '🚶 최적 도보 경로';
+                    }
+                    
+                    // 경로 정보 표시
+                    document.getElementById('route-info').innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>🚶 최적화된 도보 경로</strong>
+                                <div style="color: #666; font-size: 14px; margin-top: 5px;">
+                                    총 거리: ${Math.round(totalDistance)}m | 예상 시간: ${Math.round(totalDuration)}분 | 경유지: ${optimizedRoute.length}개
+                                </div>
+                                <div style="color: #888; font-size: 12px;">
+                                    성공한 구간: ${successfulSegments}/${results.length}개 | 가장 가까운 순서로 최적화
+                                </div>
+                            </div>
+                            <div style="color: #2563eb; font-weight: bold; font-size: 12px;">
+                                최단 거리 경로
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('route-info').style.display = 'block';
+                    
+                })
+                .catch(error => {
+                    if (routeBtn) {
+                        routeBtn.textContent = '🚶 경로 오류';
+                        routeBtn.classList.remove('active');
+                    }
+                });
+        }
+        
+        // 자동차 경로 표시 (최적 경로 + 실제 도로 API 사용)
+        function showDrivingRoute() {
+            if (markers.length < 2) {
+                alert('최소 2개 이상의 장소가 필요합니다.');
+                return;
+            }
+            
+            clearRoutes();
+            
+            const routeBtn = document.getElementById('show-driving');
+            if (routeBtn) {
+                routeBtn.classList.add('active');
+                routeBtn.textContent = '🚗 경로 최적화 중...';
+            }
+            
+            // 최적 경로 계산
+            const optimizedRoute = findOptimalRoute(markers);
+            
+            // 최적화된 경로로 순서대로 연결하는 경로 생성
+            const routePromises = [];
+            
+            for (let i = 0; i < optimizedRoute.length - 1; i++) {
+                const startMarkerItem = optimizedRoute[i];
+                const endMarkerItem = optimizedRoute[i + 1];
+                
+                const startPos = startMarkerItem.marker.getPosition();
+                const endPos = endMarkerItem.marker.getPosition();
+                
+                const routeData = {
+                    start: {
+                        lat: startPos.getLat(),
+                        lng: startPos.getLng(),
+                        name: `장소 ${i + 1}`
+                    },
+                    end: {
+                        lat: endPos.getLat(),
+                        lng: endPos.getLng(),
+                        name: `장소 ${i + 2}`
+                    }
+                };
+                
+                const promise = fetch('/api/directions/car', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(routeData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    return { segmentIndex: i, data: data };
+                })
+                .catch(error => {
+                    return { segmentIndex: i, data: { success: false, error: error.message } };
+                });
+                
+                routePromises.push(promise);
+            }
+            
+            // 모든 구간의 경로 완료 대기
+            Promise.all(routePromises)
+                .then(results => {
+                    let totalDistance = 0;
+                    let totalDuration = 0;
+                    let totalToll = 0;
+                    let successfulSegments = 0;
+                    let hasHighway = false;
+                    
+                    results.forEach((result, index) => {
+                        const { segmentIndex, data } = result;
+                        
+                        if (data.success && data.path && data.path.length > 1) {
+                            // 경로 폴리라인 생성
+                            const path = data.path.map(point => new kakao.maps.LatLng(point.lat, point.lng));
+                            
+                            // 고속도로 구간이 있으면 다른 색상
+                            const hasHighwaySegment = data.road_info && data.road_info.highway_distance > 0;
+                            if (hasHighwaySegment) hasHighway = true;
+                            
+                            const polyline = new kakao.maps.Polyline({
+                                path: path,
+                                strokeWeight: 5,
+                                strokeColor: hasHighwaySegment ? '#dc2626' : '#ea580c',
+                                strokeOpacity: 0.8,
+                                strokeStyle: 'solid'
+                            });
+                            
+                            polyline.setMap(map);
+                            routePolylines.driving.push(polyline);
+                            
+                            totalDistance += data.distance || 0;
+                            totalDuration += data.duration || 0;
+                            totalToll += (data.toll_info && data.toll_info.cost) || 0;
+                            successfulSegments++;
+                            
+                        } else {
+                            // 실패한 구간은 점선으로 연결
+                            const startMarkerItem = optimizedRoute[segmentIndex];
+                            const endMarkerItem = optimizedRoute[segmentIndex + 1];
+                            
+                            const fallbackPath = [
+                                startMarkerItem.marker.getPosition(),
+                                endMarkerItem.marker.getPosition()
+                            ];
+                            
+                            const fallbackPolyline = new kakao.maps.Polyline({
+                                path: fallbackPath,
+                                strokeWeight: 4,
+                                strokeColor: '#94a3b8',
+                                strokeOpacity: 0.6,
+                                strokeStyle: 'longdash'
+                            });
+                            
+                            fallbackPolyline.setMap(map);
+                            routePolylines.driving.push(fallbackPolyline);
+                        }
+                    });
+                    
+                    // 버튼 상태 업데이트
+                    if (routeBtn) {
+                        routeBtn.textContent = '🚗 최적 자동차 경로';
+                    }
+                    
+                    // 경로 정보 표시
+                    document.getElementById('route-info').innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>🚗 최적화된 자동차 경로</strong>
+                                <div style="color: #666; font-size: 14px; margin-top: 5px;">
+                                    총 거리: ${(totalDistance / 1000).toFixed(1)}km | 예상 시간: ${Math.round(totalDuration)}분 | 경유지: ${optimizedRoute.length}개
+                                </div>
+                                <div style="color: #888; font-size: 12px;">
+                                    성공한 구간: ${successfulSegments}/${results.length}개 | 가장 가까운 순서로 최적화
+                                    ${totalToll > 0 ? ` | 톨게이트: ${totalToll.toLocaleString()}원` : ''}
+                                    ${hasHighway ? ' | 고속도로 포함' : ''}
+                                </div>
+                            </div>
+                            <div style="color: #dc2626; font-weight: bold; font-size: 12px;">
+                                최단 거리 경로
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('route-info').style.display = 'block';
+                    
+                })
+                .catch(error => {
+                    if (routeBtn) {
+                        routeBtn.textContent = '🚗 경로 오류';
+                        routeBtn.classList.remove('active');
+                    }
+                });
+        }
+        
+        // 경로 지우기
+        function clearRoutes() {
+            // 모든 경로 폴리라인 제거
+            Object.values(routePolylines).forEach(polylines => {
+                polylines.forEach(polyline => polyline.setMap(null));
+            });
+            routePolylines = { walking: [], driving: [] };
+            
+            // 버튼 상태 초기화
+            const walkingBtn = document.getElementById('show-walking');
+            const drivingBtn = document.getElementById('show-driving');
+            
+            if (walkingBtn) {
+                walkingBtn.classList.remove('active');
+                walkingBtn.textContent = '🚶 도보 경로';
+            }
+            
+            if (drivingBtn) {
+                drivingBtn.classList.remove('active');
+                drivingBtn.textContent = '🚗 자동차 경로';
+            }
+            
+            // 경로 정보 숨기기
+            const routeInfo = document.getElementById('route-info');
+            if (routeInfo) {
+                routeInfo.style.display = 'none';
+            }
+        }
+        
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            // 필터 기능 초기화
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            const storeItems = document.querySelectorAll('.store-item'); // 매장 아이템만 필터링
+            
+            // 각 매장 아이템에 카테고리 색상 표시
+            storeItems.forEach(item => {
+                const category = item.getAttribute('data-category');
+                
+                // 매장 이름 옆에 카테고리 색상 표시
+                const colorIndicator = document.createElement('div');
+                colorIndicator.style.cssText = `
+                    width: 8px; height: 8px; border-radius: 50%;
+                    background: ${categoryColors[category] || '#a29bfe'};
+                    display: inline-block; margin-left: 8px; vertical-align: middle;
+                `;
+                item.querySelector('.store-name').appendChild(colorIndicator);
+            });
+            
+            // 필터 버튼 이벤트 리스너
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    filterButtons.forEach(btn => btn.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    const selectedCategory = this.getAttribute('data-category');
+                    let visibleCount = 0;
+                    
+                    storeItems.forEach(item => {
+                        const itemCategory = item.getAttribute('data-category');
+                        if (selectedCategory === 'all' || itemCategory === selectedCategory) {
+                            item.style.display = 'block';
+                            visibleCount++;
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                    
+                    // 통계 업데이트
+                    document.getElementById('visible-stores').textContent = visibleCount;
+                    document.getElementById('selected-category').textContent = 
+                        selectedCategory === 'all' ? '전체' : selectedCategory;
+                });
+            });
+            
+            // 초기 통계 설정
+            document.getElementById('visible-stores').textContent = storeItems.length;
+            document.getElementById('selected-category').textContent = '전체';
+            
+            // 지도 초기화 (약간의 지연 후)
+            console.log('지도 초기화 예약됨 (2초 후)');
+            setTimeout(() => {
+                console.log('지도 초기화 호출');
+                initMap();
+            }, 2000);
+        });
+    </script>
 </body>
 </html>
