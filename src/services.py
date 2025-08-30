@@ -53,6 +53,8 @@ def load_stores() -> List[Store]:
                     opening_hours=store_data.get('opening_hours', '09:00-21:00'),
                     menu_highlights=store_data.get('menu_highlights', []),
                     location=store_data.get('area', store_data.get('location', '')),
+                    latitude=store_data.get('latitude'),
+                    longitude=store_data.get('longitude'),
                     image_url=store_data.get('image_url', '')
                 )
                 stores.append(store)
