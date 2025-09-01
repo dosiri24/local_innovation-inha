@@ -327,6 +327,18 @@
                     <span class="value">{{ pass_data.benefits|length }}개</span>
                 </div>
             </div>
+
+            <!-- 혜택 코드 입력/검증 섹션 -->
+            <div class="pass-info" style="margin-top: 10px;">
+                <h3>🔐 혜택 코드 사용</h3>
+                <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap;">
+                    <input id="benefit-code" type="text" placeholder="예: ABCD-1234" 
+                           style="flex:1; min-width: 200px; padding:10px; border:1px solid #e2e8f0; border-radius:8px;">
+                    <button onclick="validateCode()" class="route-btn" style="background:#4caf50">검증</button>
+                    <button onclick="redeemCode()" class="route-btn">사용 처리</button>
+                </div>
+                <div id="code-result" style="margin-top:10px; font-size:14px; color:#555;"></div>
+            </div>
             
             <div class="features-section">
                 <div class="features-title">🎯 패스 기능</div>
@@ -1130,3 +1142,29 @@
     </script>
 </body>
 </html>
+        async function validateCode() {
+            const code = (document.getElementById('benefit-code').value || '').trim().toUpperCase();
+            const res = await fetch('/api/benefits/validate', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, pass_id: '{{ pass_data.pass_id }}' })
+            });
+            const data = await res.json();
+            const el = document.getElementById('code-result');
+            if (!data.success) { el.textContent = `검증 실패: ${data.error || '알 수 없는 오류'}`; el.style.color = '#c53030'; return; }
+            if (!data.valid) { el.textContent = '유효하지 않은 코드입니다.'; el.style.color = '#c53030'; return; }
+            el.style.color = data.used ? '#c53030' : '#2f855a';
+            el.textContent = data.used ? '이미 사용된 코드입니다.' : `유효한 코드입니다: ${data.benefit.store_name} - ${data.benefit.description}`;
+        }
+
+        async function redeemCode() {
+            const code = (document.getElementById('benefit-code').value || '').trim().toUpperCase();
+            const res = await fetch('/api/benefits/redeem', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code, pass_id: '{{ pass_data.pass_id }}' })
+            });
+            const data = await res.json();
+            const el = document.getElementById('code-result');
+            if (!data.success) { el.textContent = `사용 실패: ${data.error || '알 수 없는 오류'}`; el.style.color = '#c53030'; return; }
+            el.style.color = '#2f855a';
+            el.textContent = '혜택이 사용 처리되었습니다.';
+        }

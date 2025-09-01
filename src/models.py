@@ -31,6 +31,8 @@ class Benefit:
     discount_rate: Optional[str] = None
     valid_until: Optional[str] = None
     terms: Optional[str] = None
+    # 전역 고정 특수코드 및 사용 상태(전역 저장소로 관리)
+    redemption_code: Optional[str] = None
 
 @dataclass
 class UserPrefs:
@@ -70,4 +72,3 @@ class Pass:
     benefits: List[Benefit]
     created_at: str
     user_prefs: UserPrefs
-    qr_code_path: Optional[str] = None

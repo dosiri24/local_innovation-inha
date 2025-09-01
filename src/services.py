@@ -3,12 +3,12 @@
 """
 import json
 import os
-import qrcode
 from datetime import datetime
 from typing import List, Dict, Optional, Any
 import google.generativeai as genai
 from dotenv import load_dotenv
 from models import Store, Benefit, UserPrefs, Pass, PassType, Theme
+import hashlib
 
 # 환경 변수 로드
 load_dotenv()
@@ -129,6 +129,98 @@ def load_themes() -> Dict[str, Any]:
         print(f"테마 데이터 로드 중 오류: {e}")
         return {}
 
+def _stable_redemption_code(source: str) -> str:
+    """입력 문자열 기반으로 안정적인 8자 코드 생성(대문자+숫자), XXXX-XXXX 형식"""
+    digest = hashlib.sha1(source.encode('utf-8')).hexdigest().upper()
+    # 영숫자만 사용, 앞 8자
+    code = ''.join(ch for ch in digest if ch.isalnum())[:8]
+    return f"{code[:4]}-{code[4:8]}"
+
+
+def _attach_redemption_codes(benefits: List[Benefit]) -> None:
+    """각 혜택에 전역 고정 특수코드 부여(입력 데이터 기반 안정적 생성)"""
+    for b in benefits:
+        # store_name에는 현재 store_id가 들어있음(load_benefits 구현 참고)
+        source = f"{b.store_name}|{b.benefit_type}|{b.description}"
+        b.redemption_code = _stable_redemption_code(source)
+
+
+def _redemptions_path() -> str:
+    return os.path.join(os.path.dirname(__file__), '..', 'storage', 'redemptions.json')
+
+
+def load_redemptions() -> Dict[str, Any]:
+    """전역 혜택 코드 사용 내역 로드"""
+    path = _redemptions_path()
+    if not os.path.exists(path):
+        return {"used": {}}  # { code: { used_at, used_by, pass_id? }}
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if 'used' not in data:
+                data = {"used": {}}
+            return data
+    except Exception:
+        return {"used": {}}
+
+
+def save_redemptions(data: Dict[str, Any]) -> bool:
+    """전역 혜택 코드 사용 내역 저장"""
+    try:
+        path = _redemptions_path()
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        return True
+    except Exception:
+        return False
+
+
+def validate_redemption_code(code: str) -> Dict[str, Any]:
+    """코드 유효성 및 사용 여부 확인"""
+    all_benefits = load_benefits()
+    # 코드 부여
+    _attach_redemption_codes(all_benefits)
+    benefit_map = {b.redemption_code: b for b in all_benefits if b.redemption_code}
+    info = {"valid": False, "used": False}
+    if code not in benefit_map:
+        return info
+    redemptions = load_redemptions()
+    info.update({
+        "valid": True,
+        "used": code in redemptions.get('used', {}),
+        "benefit": {
+            "store_name": benefit_map[code].store_name,
+            "benefit_type": benefit_map[code].benefit_type,
+            "description": benefit_map[code].description,
+        }
+    })
+    if info["used"]:
+        info["used_info"] = redemptions['used'][code]
+    return info
+
+
+def redeem_code(code: str, pass_id: Optional[str], user_email: Optional[str]) -> Dict[str, Any]:
+    """코드를 사용 처리(전역 1회성)
+    - code가 유효하면 사용 처리
+    - 이미 사용된 경우 used=true 반환
+    """
+    result = validate_redemption_code(code)
+    if not result.get('valid'):
+        return {"success": False, "error": "invalid_code"}
+    redemptions = load_redemptions()
+    if code in redemptions.get('used', {}):
+        return {"success": True, "used": True, "used_info": redemptions['used'][code]}
+    # 사용 처리
+    redemptions.setdefault('used', {})[code] = {
+        "used_at": datetime.now().isoformat(),
+        "used_by": user_email,
+        "pass_id": pass_id,
+    }
+    save_redemptions(redemptions)
+    return {"success": True, "used": True}
+
+
 def generate_pass(user_prefs: UserPrefs, pass_type: PassType, theme: Theme) -> Optional[Pass]:
     """AI 기반 패스 생성"""
     try:
@@ -241,11 +333,9 @@ def generate_pass(user_prefs: UserPrefs, pass_type: PassType, theme: Theme) -> O
             created_at=datetime.now().isoformat(),
             user_prefs=user_prefs
         )
-        
-        # QR 코드 생성
-        qr_code_path = generate_qr_code(pass_id)
-        if qr_code_path:
-            pass_obj.qr_code_path = qr_code_path
+
+        # 혜택 전역 코드 부여
+        _attach_redemption_codes(pass_obj.benefits)
         
         # 패스 저장
         save_pass_to_file(pass_obj)
@@ -254,33 +344,6 @@ def generate_pass(user_prefs: UserPrefs, pass_type: PassType, theme: Theme) -> O
         
     except Exception as e:
         print(f"패스 생성 중 오류 발생: {e}")
-        return None
-
-def generate_qr_code(pass_id: str) -> Optional[str]:
-    """QR 코드 생성"""
-    try:
-        qr_codes_dir = os.path.join(os.path.dirname(__file__), '..', 'storage', 'qr_codes')
-        os.makedirs(qr_codes_dir, exist_ok=True)
-        
-        qr = qrcode.QRCode(
-            version=1,
-            error_correction=qrcode.constants.ERROR_CORRECT_L,  # type: ignore
-            box_size=10,
-            border=4,
-        )
-        qr.add_data(f"PASS:{pass_id}")
-        qr.make(fit=True)
-        
-        img = qr.make_image(fill_color="black", back_color="white")
-        
-        qr_filename = f"pass_{pass_id}.png"
-        qr_path = os.path.join(qr_codes_dir, qr_filename)
-        img.save(qr_path)  # type: ignore
-        
-        return qr_path
-        
-    except Exception as e:
-        print(f"QR 코드 생성 중 오류: {e}")
         return None
 
 def save_pass_to_file(pass_obj: Pass) -> bool:
@@ -296,8 +359,7 @@ def save_pass_to_file(pass_obj: Pass) -> bool:
             'stores': [store.__dict__ for store in pass_obj.stores],
             'benefits': [benefit.__dict__ for benefit in pass_obj.benefits],
             'created_at': pass_obj.created_at,
-            'user_prefs': pass_obj.user_prefs.__dict__,
-            'qr_code_path': pass_obj.qr_code_path
+            'user_prefs': pass_obj.user_prefs.__dict__
         }
         
         filename = f"pass_{pass_obj.pass_id}.json"
@@ -354,9 +416,16 @@ def load_pass_from_file(pass_id: str) -> Optional[Pass]:
         
         # 데이터 복원
         stores = [Store(**store_data) for store_data in pass_data['stores']]
-        benefits = [Benefit(**benefit_data) for benefit_data in pass_data['benefits']]
+        # 혜택 코드 누락 시 부여
+        benefits = []
+        for benefit_data in pass_data['benefits']:
+            b = Benefit(**benefit_data)
+            if not getattr(b, 'redemption_code', None):
+                source = f"{b.store_name}|{b.benefit_type}|{b.description}"
+                b.redemption_code = _stable_redemption_code(source)
+            benefits.append(b)
         user_prefs = UserPrefs(**pass_data['user_prefs'])
-        
+
         pass_obj = Pass(
             pass_id=pass_data['pass_id'],
             pass_type=pass_type,
@@ -364,8 +433,7 @@ def load_pass_from_file(pass_id: str) -> Optional[Pass]:
             stores=stores,
             benefits=benefits,
             created_at=pass_data['created_at'],
-            user_prefs=user_prefs,
-            qr_code_path=pass_data.get('qr_code_path')
+            user_prefs=user_prefs
         )
         
         return pass_obj

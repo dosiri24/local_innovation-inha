@@ -109,7 +109,7 @@ def register_routes(app):
 
     @app.route('/pass/<pass_id>')
     def view_pass(pass_id):
-        """QR 코드 스캔 시 보여줄 패스 상세 페이지"""
+        """패스 상세 페이지"""
         try:
             print(f"[패스 상세] 요청된 패스 ID: {pass_id}")
             pass_data = load_pass_from_file(pass_id)
@@ -441,7 +441,6 @@ def register_routes(app):
                 'success': True,
                 'pass_id': generated_pass.pass_id,
                 'created_at': generated_pass.created_at,
-                'qr_code_available': bool(generated_pass.qr_code_path),
                 'pass_info': {
                     'name': pass_info['name'],
                     'price': pass_info['price'],
@@ -516,8 +515,7 @@ def register_routes(app):
                     'created_at': pass_data.created_at,
                     'stores': [store.__dict__ for store in pass_data.stores],
                     'benefits': enhanced_benefits,  # 변환된 혜택 데이터 사용
-                    'user_prefs': pass_data.user_prefs.__dict__,
-                    'qr_code_path': pass_data.qr_code_path
+                    'user_prefs': pass_data.user_prefs.__dict__
                 }
             })
             
@@ -545,25 +543,36 @@ def register_routes(app):
             print(f"[오류] 사용자 패스 조회 중 에러: {e}")
             return jsonify({'error': f'패스 조회 중 오류가 발생했습니다: {str(e)}'}), 500
 
-    @app.route('/api/pass/<pass_id>/qr')
-    def get_pass_qr_code(pass_id):
-        """패스의 QR 코드 이미지 다운로드"""
+    # 혜택 특수코드 검증/사용 API
+    @app.route('/api/benefits/validate', methods=['POST'])
+    def validate_benefit_code():
         try:
-            pass_data = load_pass_from_file(pass_id)
-            
-            if not pass_data:
-                return jsonify({'error': '패스를 찾을 수 없습니다.'}), 404
-            
-            qr_code_path = pass_data.qr_code_path
-            
-            if not qr_code_path or not os.path.exists(qr_code_path):
-                return jsonify({'error': 'QR 코드를 찾을 수 없습니다.'}), 404
-            
-            return send_file(qr_code_path, as_attachment=True, download_name=f'pass_{pass_id}_qr.png')
-            
+            data = request.get_json() or {}
+            code = (data.get('code') or '').strip().upper()
+            if not code:
+                return jsonify({'success': False, 'error': '코드가 필요합니다.'}), 400
+            from services import validate_redemption_code
+            info = validate_redemption_code(code)
+            return jsonify({'success': True, **info})
         except Exception as e:
-            print(f"[오류] QR 코드 조회 중 에러: {e}")
-            return jsonify({'error': f'QR 코드 조회 중 오류가 발생했습니다: {str(e)}'}), 500
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    @app.route('/api/benefits/redeem', methods=['POST'])
+    @login_required
+    def redeem_benefit_code():
+        try:
+            data = request.get_json() or {}
+            code = (data.get('code') or '').strip().upper()
+            pass_id = (data.get('pass_id') or '').strip() or None
+            if not code:
+                return jsonify({'success': False, 'error': '코드가 필요합니다.'}), 400
+            from services import redeem_code
+            user_email = session.get('user_email')
+            result = redeem_code(code, pass_id, user_email)
+            status = 200 if result.get('success') else 400
+            return jsonify(result), status
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     @app.route('/api/directions', methods=['POST'])
     def get_directions():

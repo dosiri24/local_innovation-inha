@@ -385,21 +385,7 @@
         </div>
     </div>
 
-    <!-- QR 코드 모달 -->
-    <div id="qr-modal" class="qr-modal">
-        <div class="qr-modal-content">
-            <span class="qr-close" onclick="closeQRModal()">&times;</span>
-            <h2 style="color: #667eea; margin-bottom: 20px;">📱 패스 QR 코드</h2>
-            <div class="qr-code-container" id="qr-code-container">
-                <!-- QR 코드 이미지가 여기에 표시됩니다 -->
-            </div>
-            <div class="qr-info">
-                <p><strong>사용법:</strong></p>
-                <p>• 가맹점에서 QR 코드를 보여주세요</p>
-                <p>• 혜택을 받고 즐거운 여행을 하세요!</p>
-            </div>
-        </div>
-    </div>
+    <!-- QR 코드 기능 제거됨 -->
 
     <script>
         let userPasses = [];
@@ -498,9 +484,6 @@
                 </div>
                 
                 <div class="pass-actions">
-                    <button class="view-qr-btn" onclick="showQRCode('${pass.pass_id}')">
-                        📱 QR 코드 보기
-                    </button>
                     <a href="/pass/${pass.pass_id}" target="_blank" class="view-details-btn">
                         📄 상세 보기
                     </a>
@@ -510,61 +493,9 @@
             return card;
         }
 
-        // QR 코드 모달 표시
-        async function showQRCode(passId) {
-            const modal = document.getElementById('qr-modal');
-            const container = document.getElementById('qr-code-container');
-            
-            modal.style.display = 'block';
-            container.innerHTML = '<div class="loading"><div class="spinner"></div><div class="loading-text">QR 코드 로딩 중...</div></div>';
-            
-            try {
-                // 패스 정보 가져오기
-                const pass = userPasses.find(p => p.pass_id === passId);
-                
-                if (pass && pass.qr_code_path) {
-                    // QR 코드 이미지 표시
-                    container.innerHTML = `
-                        <img src="${pass.qr_code_path}" alt="패스 QR 코드" class="qr-code-image" 
-                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjUwIiBoZWlnaHQ9IjI1MCIgdmlld0JveD0iMCAwIDI1MCAyNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIyNTAiIGhlaWdodD0iMjUwIiBmaWxsPSIjRjNGNEY2Ii8+CjxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjIzMCIgaGVpZ2h0PSIyMzAiIGZpbGw9IndoaXRlIiBzdHJva2U9IiNEMUQ1REIiIHN0cm9rZS13aWR0aD0iMiIvPgo8dGV4dCB4PSIxMjUiIHk9IjEyNSIgZm9udC1mYW1pbHk9IkFyaWFsIiBmb250LXNpemU9IjE0IiBmaWxsPSIjNjY3RUVBIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5RUiDsvZTrk5w8L3RleHQ+Cjx0ZXh0IHg9IjEyNSIgeT0iMTQ1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM5Q0E0QUYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPuyXhOydjCDsl4bsnYw8L3RleHQ+Cjwvc3ZnPgo='"
-                        />
-                        <div style="margin-top: 15px; color: #667eea; font-weight: 600;">
-                            패스 ID: ${passId}
-                        </div>
-                    `;
-                } else {
-                    container.innerHTML = `
-                        <div style="padding: 40px; color: #666;">
-                            <div style="font-size: 3em; margin-bottom: 15px;">😅</div>
-                            <div style="font-size: 1.1em; font-weight: 600; margin-bottom: 10px;">QR 코드를 찾을 수 없습니다</div>
-                            <div style="font-size: 0.9em;">패스가 아직 완전히 생성되지 않았을 수 있습니다.</div>
-                        </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('QR 코드 로드 실패:', error);
-                container.innerHTML = `
-                    <div style="padding: 40px; color: #c53030;">
-                        <div style="font-size: 3em; margin-bottom: 15px;">❌</div>
-                        <div style="font-size: 1.1em; font-weight: 600;">QR 코드 로드 실패</div>
-                        <div style="font-size: 0.9em; margin-top: 10px;">잠시 후 다시 시도해주세요.</div>
-                    </div>
-                `;
-            }
-        }
+        // QR 코드 기능 제거됨
 
-        // QR 코드 모달 닫기
-        function closeQRModal() {
-            document.getElementById('qr-modal').style.display = 'none';
-        }
-
-        // 모달 외부 클릭 시 닫기
-        window.onclick = function(event) {
-            const modal = document.getElementById('qr-modal');
-            if (event.target == modal) {
-                closeQRModal();
-            }
-        }
+        // (QR 모달 제거됨)
     </script>
 </body>
 </html>
