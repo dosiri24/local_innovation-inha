@@ -5,9 +5,10 @@ from flask import render_template, request, jsonify, send_file, send_from_direct
 import os
 from models import UserPrefs, PassType, Theme
 from services import (
-    load_stores, load_benefits, load_themes, generate_pass, 
+    load_stores, load_benefits, load_themes,
     load_pass_from_file, get_all_passes
 )
+from pass_generator import generate_pass  # 패스 생성 모듈에서 임포트
 
 def login_required(f):
     """로그인이 필요한 페이지에 적용할 데코레이터"""
