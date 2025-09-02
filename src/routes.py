@@ -9,6 +9,7 @@ from services import (
     load_pass_from_file, get_all_passes
 )
 from pass_generator import generate_pass  # 패스 생성 모듈에서 임포트
+from chatbot import get_chatbot, clear_chatbot_session  # 채팅봇 모듈 임포트
 
 def login_required(f):
     """로그인이 필요한 페이지에 적용할 데코레이터"""
@@ -312,6 +313,254 @@ def register_routes(app):
                 'success': False,
                 'stores': [],
                 'count': 0
+            }), 500
+
+    # 채팅봇 관련 API
+    @app.route('/api/chat/start', methods=['POST'])
+    @login_required
+    def start_chat():
+        """채팅 대화 시작"""
+        try:
+            data = request.get_json()
+            
+            if not data:
+                return jsonify({'error': '요청 데이터가 없습니다.'}), 400
+            
+            selected_themes = data.get('themes', [])
+            
+            # 세션 ID 생성 (사용자 이메일 + 타임스탬프)
+            user_email = session.get('user_email', 'anonymous')
+            session_id = f"{user_email}_{hash(user_email) % 10000:04d}"
+            
+            # 채팅봇 인스턴스 가져오기
+            chatbot = get_chatbot(session_id)
+            
+            # 대화 시작
+            bot_message = chatbot.start_conversation(selected_themes)
+            
+            return jsonify({
+                'success': True,
+                'session_id': session_id,
+                'bot_message': bot_message,
+                'extracted_info': chatbot.extracted_info,
+                'conversation_history': chatbot.conversation_history
+            })
+            
+        except Exception as e:
+            print(f"[채팅봇 API] 대화 시작 실패: {e}")
+            return jsonify({
+                'error': f'채팅 시작 중 오류가 발생했습니다: {str(e)}',
+                'success': False
+            }), 500
+
+    @app.route('/api/chat/message', methods=['POST'])
+    @login_required  
+    def send_chat_message():
+        """채팅 메시지 전송"""
+        try:
+            data = request.get_json()
+            
+            if not data:
+                return jsonify({'error': '요청 데이터가 없습니다.'}), 400
+            
+            session_id = data.get('session_id')
+            user_message = data.get('message', '').strip()
+            
+            if not session_id or not user_message:
+                return jsonify({'error': '세션 ID와 메시지가 필요합니다.'}), 400
+            
+            # 채팅봇 인스턴스 가져오기
+            chatbot = get_chatbot(session_id)
+            
+            # 대화 계속하기
+            result = chatbot.continue_conversation(user_message)
+            
+            return jsonify({
+                'success': True,
+                'bot_message': result['bot_message'],
+                'extracted_info': result['extracted_info'],
+                'conversation_complete': result['conversation_complete'],
+                'conversation_history': result['conversation_history']
+            })
+            
+        except Exception as e:
+            print(f"[채팅봇 API] 메시지 처리 실패: {e}")
+            return jsonify({
+                'error': f'메시지 처리 중 오류가 발생했습니다: {str(e)}',
+                'success': False
+            }), 500
+
+    @app.route('/api/chat/complete', methods=['POST'])
+    @login_required
+    def complete_chat():
+        """채팅 완료 후 패스 생성"""
+        try:
+            data = request.get_json()
+            
+            if not data:
+                return jsonify({'error': '요청 데이터가 없습니다.'}), 400
+            
+            session_id = data.get('session_id')
+            pass_type_str = data.get('pass_type', 'light')
+            
+            if not session_id:
+                return jsonify({'error': '세션 ID가 필요합니다.'}), 400
+            
+            # 채팅봇 인스턴스 가져오기
+            chatbot = get_chatbot(session_id)
+            
+            # 최종 사용자 선호도 가져오기
+            preferences = chatbot.get_final_preferences()
+            
+            # UserPrefs 객체 생성
+            user_prefs = UserPrefs(
+                budget=preferences.get('budget', '보통'),
+                interests=preferences.get('interests', []),
+                dietary_restrictions=preferences.get('dietary_restrictions', []),
+                group_size=preferences.get('group_size', 2),
+                duration=preferences.get('duration', '반나절'),
+                transportation=preferences.get('transportation', '도보')
+            )
+            
+            # PassType과 Theme 변환
+            pass_type_mapping = {
+                'light': PassType.LIGHT,
+                'premium': PassType.PREMIUM,
+                'citizen': PassType.CITIZEN
+            }
+            
+            theme_mapping = {
+                'food': Theme.FOOD,
+                'culture': Theme.CULTURE,
+                'shopping': Theme.SHOPPING,
+                'entertainment': Theme.ENTERTAINMENT,
+                'seafood': Theme.SEAFOOD,
+                'cafe': Theme.CAFE,
+                'traditional': Theme.TRADITIONAL,
+                'retro': Theme.RETRO,
+                'quiet': Theme.QUIET,
+                '해산물': Theme.SEAFOOD,
+                '카페': Theme.CAFE,
+                '전통': Theme.TRADITIONAL,
+                '레트로': Theme.RETRO,
+                '조용함': Theme.QUIET,
+                '맛집': Theme.FOOD,
+                '디저트': Theme.FOOD,
+                '술집': Theme.FOOD,
+                '문화': Theme.CULTURE,
+                '쇼핑': Theme.SHOPPING
+            }
+            
+            pass_type = pass_type_mapping.get(pass_type_str.lower(), PassType.LIGHT)
+            
+            # 첫 번째 관심사를 기본 테마로 사용
+            first_interest = preferences.get('interests', ['맛집'])[0] if preferences.get('interests') else '맛집'
+            theme = theme_mapping.get(first_interest.lower(), Theme.FOOD)
+            
+            print(f"[채팅봇 API] 패스 생성 시작 - 타입: {pass_type.value}, 테마: {theme.value}")
+            print(f"[채팅봇 API] 사용자 선호도: {preferences}")
+            
+            # 패스 생성
+            generated_pass = generate_pass(user_prefs, pass_type, theme)
+            
+            if not generated_pass:
+                return jsonify({'error': '조건에 맞는 패스를 생성할 수 없습니다.'}), 400
+            
+            # 혜택 데이터에서 store_id를 실제 상점명으로 변환
+            from services import load_stores_raw
+            stores_raw = load_stores_raw()
+            store_id_to_name = {store['id']: store['name'] for store in stores_raw}
+            
+            # 혜택 정보를 프론트엔드 형식으로 변환
+            recommendations = []
+            enhanced_benefits = []
+            
+            for benefit in generated_pass.benefits:
+                store_name = store_id_to_name.get(benefit.store_name, benefit.store_name)
+                
+                # 프론트엔드용 형식
+                recommendations.append({
+                    'benefit_id': f'B{len(recommendations)+1:03d}',
+                    'store_name': store_name,
+                    'benefit_desc': benefit.description,
+                    'eco_value': 3500,  # 임시값
+                    'reason': f'{store_name}에서 제공하는 특별 혜택입니다.'
+                })
+                
+                # 기존 API용 형식
+                enhanced_benefit = benefit.__dict__.copy()
+                enhanced_benefit['store_name'] = store_name
+                enhanced_benefits.append(enhanced_benefit)
+            
+            # 패스 타입별 정보 설정
+            pass_type_info = {
+                'light': {'name': '스탠다드 패스', 'price': 9900},
+                'premium': {'name': '프리미엄 패스', 'price': 14900},
+                'citizen': {'name': '시민 우대 패스', 'price': 7000}
+            }
+            
+            pass_info = pass_type_info.get(generated_pass.pass_type.value, pass_type_info['light'])
+            total_value = sum(rec['eco_value'] for rec in recommendations)
+            
+            # 응답 데이터 구성
+            result = {
+                'success': True,
+                'pass_id': generated_pass.pass_id,
+                'created_at': generated_pass.created_at,
+                'pass_info': {
+                    'name': pass_info['name'],
+                    'price': pass_info['price'],
+                    'pass_type': generated_pass.pass_type.value,
+                    'theme': generated_pass.theme.value,
+                    'stores_count': len(generated_pass.stores),
+                    'benefits_count': len(generated_pass.benefits),
+                    'total_value': total_value,
+                    'value_ratio': int((total_value / pass_info['price']) * 100),
+                    'avg_synergy': 85.5
+                },
+                'stores': [store.__dict__ for store in generated_pass.stores],
+                'benefits': enhanced_benefits,
+                'recommendations': recommendations,
+                'user_input': preferences,
+                'conversation_summary': {
+                    'chat_history': chatbot.conversation_history,
+                    'extracted_preferences': preferences
+                }
+            }
+            
+            # 채팅 세션 정리
+            clear_chatbot_session(session_id)
+            
+            return jsonify(result)
+            
+        except Exception as e:
+            print(f"[채팅봇 API] 패스 생성 실패: {e}")
+            return jsonify({
+                'error': f'패스 생성 중 오류가 발생했습니다: {str(e)}',
+                'success': False
+            }), 500
+
+    @app.route('/api/chat/reset', methods=['POST'])
+    @login_required
+    def reset_chat():
+        """채팅 세션 리셋"""
+        try:
+            data = request.get_json()
+            session_id = data.get('session_id') if data else None
+            
+            if session_id:
+                clear_chatbot_session(session_id)
+            
+            return jsonify({
+                'success': True,
+                'message': '채팅 세션이 리셋되었습니다.'
+            })
+            
+        except Exception as e:
+            print(f"[채팅봇 API] 세션 리셋 실패: {e}")
+            return jsonify({
+                'error': f'세션 리셋 중 오류가 발생했습니다: {str(e)}',
+                'success': False
             }), 500
 
     # 패스 관련 API
