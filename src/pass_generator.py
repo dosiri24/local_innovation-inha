@@ -29,16 +29,17 @@ class PassGenerator:
         self.store_reasons = {}  # 상점별 선택 이유 저장
         
     def _initialize_ai_model(self):
-        """Google Gemini AI 모델 초기화"""
+        """Google Gemini AI 모델 초기화 (패스 생성용)"""
         api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
         print(f"[패스 생성기] AI API 키 존재: {bool(api_key)}")
         
         if api_key and genai is not None:
             try:
                 genai.configure(api_key=api_key)  # type: ignore
-                model_name = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
-                model = genai.GenerativeModel(model_name)  # type: ignore
-                print(f"[패스 생성기] Google Gemini 모델 '{model_name}' 초기화 완료")
+                # 패스 생성 전용 모델 사용
+                pass_model_name = os.getenv('GEMINI_PASS_MODEL', 'gemini-2.5-pro')
+                model = genai.GenerativeModel(pass_model_name)  # type: ignore
+                print(f"[패스 생성기] Google Gemini 패스 생성 모델 '{pass_model_name}' 초기화 완료")
                 return model
             except Exception as e:
                 print(f"[패스 생성기] AI 모델 초기화 실패: {e}")
@@ -186,6 +187,18 @@ class PassGenerator:
         
         패스 타입: {pass_type.value}
         테마: {theme.value}
+        
+        ⚠️ 중요한 품질 기준:
+        생성된 패스는 반드시 다음 기준을 만족해야 합니다:
+        1. 가치 대비 효과 비율이 150% 이상이어야 함
+        2. 상생 점수가 70점 이상이어야 함
+        3. 이 기준을 만족하지 않으면 패스가 자동으로 재생성됨
+        
+        계산 방법:
+        - 가치 대비 효과 = (총 혜택 가치 / 패스 가격) × 100
+        - 상생 점수 = (지역 상점 수 / 전체 상점 수) × 50 + (특별 혜택 수 / 전체 혜택 수) × 50
+        
+        위 기준을 만족하도록 혜택이 풍부하고 지역 상점 비율이 높은 상점들을 선택해주세요.
         
         다음 상점들 중에서 사용자 선호도에 맞는 3-5개의 상점을 추천해주세요:
         {json.dumps(store_info, ensure_ascii=False, indent=2)}

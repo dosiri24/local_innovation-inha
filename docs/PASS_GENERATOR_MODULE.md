@@ -143,7 +143,10 @@ clear_cache()  # 캐시 초기화
 ### 필수 환경 변수
 ```bash
 GEMINI_API_KEY=your_google_gemini_api_key
-GEMINI_MODEL=gemini-1.5-flash  # 선택사항 (기본값)
+# 챗봇용 모델 (2.5 flash)
+GEMINI_CHATBOT_MODEL=gemini-2.5-flash  # 선택사항
+# 패스 생성용 모델 (2.5 pro)
+GEMINI_PASS_MODEL=gemini-2.5-pro  # 선택사항
 ```
 
 ### 의존성 패키지

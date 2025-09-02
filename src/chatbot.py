@@ -26,16 +26,17 @@ class ChatBot:
         self.conversation_summary = ""
         
     def _initialize_ai_model(self):
-        """Google Gemini AI 모델 초기화"""
+        """Google Gemini AI 모델 초기화 (챗봇용)"""
         api_key = os.getenv('GEMINI_API_KEY') or os.getenv('GOOGLE_API_KEY')
         print(f"[채팅봇] AI API 키 존재: {bool(api_key)}")
         
         if api_key and genai is not None:
             try:
                 genai.configure(api_key=api_key)
-                model_name = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
-                model = genai.GenerativeModel(model_name)
-                print(f"[채팅봇] Google Gemini 모델 '{model_name}' 초기화 완료")
+                # 챗봇 전용 모델 사용
+                chatbot_model_name = os.getenv('GEMINI_CHATBOT_MODEL', 'gemini-2.5-flash')
+                model = genai.GenerativeModel(chatbot_model_name)
+                print(f"[채팅봇] Google Gemini 챗봇 모델 '{chatbot_model_name}' 초기화 완료")
                 return model
             except Exception as e:
                 print(f"[채팅봇] AI 모델 초기화 실패: {e}")
