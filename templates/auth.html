@@ -552,6 +552,24 @@
             color: white;
         }
 
+        .system-message {
+            justify-content: center;
+            margin: 15px 0;
+        }
+
+        .system-message .message-content {
+            max-width: 90%;
+            text-align: center;
+        }
+
+        .system-message .message-text {
+            background: linear-gradient(45deg, #ff9a9e, #fecfef);
+            color: #333;
+            font-weight: 500;
+            border: 2px solid #fff;
+            box-shadow: 0 4px 15px rgba(255, 154, 158, 0.3);
+        }
+
         .message-time {
             font-size: 0.8em;
             color: #999;
@@ -699,6 +717,21 @@
             30% {
                 transform: translateY(-10px);
                 opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+            }
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+            }
+            100% {
+                transform: scale(1);
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
             }
         }
 
@@ -1068,12 +1101,20 @@
                     // 대화 완료 확인
                     if (data.conversation_complete) {
                         conversationComplete = true;
+                        
+                        // 완료 안내 메시지 추가
+                        setTimeout(() => {
+                            addSystemMessage('✨ 정보 수집이 완료되었습니다! 이제 맞춤형 여행 패스를 생성해드릴게요. 아래 버튼을 눌러주세요.');
+                        }, 1000);
+                        
                         const generateBtn = document.getElementById('generate-btn');
                         generateBtn.textContent = '🎉 패스 생성하기';
                         generateBtn.disabled = false;
+                        generateBtn.style.animation = 'pulse 2s infinite';
                         
                         // 입력 비활성화
                         document.getElementById('chat-input').disabled = true;
+                        document.getElementById('chat-input').placeholder = '대화가 완료되었습니다';
                         document.getElementById('chat-send-btn').disabled = true;
                     }
                     
@@ -1146,6 +1187,20 @@
             const messageHtml = `
                 <div class="chat-message bot-message">
                     <div class="message-avatar">🤖</div>
+                    <div class="message-content">
+                        <div class="message-text">${escapeHtml(message)}</div>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    </div>
+                </div>
+            `;
+            chatMessages.insertAdjacentHTML('beforeend', messageHtml);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        function addSystemMessage(message) {
+            const chatMessages = document.getElementById('chat-messages');
+            const messageHtml = `
+                <div class="chat-message system-message">
                     <div class="message-content">
                         <div class="message-text">${escapeHtml(message)}</div>
                         <div class="message-time">${getCurrentTime()}</div>

@@ -1,6 +1,6 @@
 """
 AI 채팅 모듈
-사용자와의 대화를 통해 여행 니즈를 파악하는 모듈
+사용자와의 자연스러운 대화를 통해 여행 니즈를 파악하고 요약하는 모듈
 """
 import json
 import os
@@ -16,21 +16,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class ChatBot:
-    """사용자 니즈 파악을 위한 채팅봇"""
+    """자연스러운 대화로 사용자 니즈를 파악하는 채팅봇"""
     
     def __init__(self):
         """ChatBot 초기화"""
         self.model = self._initialize_ai_model()
         self.conversation_history = []
         self.user_interests = []
-        self.extracted_info = {
-            'themes': [],
-            'budget': '보통',
-            'group_size': 2,
-            'duration': '반나절',
-            'transportation': '도보',
-            'special_requests': []
-        }
+        self.conversation_summary = ""
         
     def _initialize_ai_model(self):
         """Google Gemini AI 모델 초기화"""
@@ -39,9 +32,9 @@ class ChatBot:
         
         if api_key and genai is not None:
             try:
-                genai.configure(api_key=api_key)  # type: ignore
+                genai.configure(api_key=api_key)
                 model_name = os.getenv('GEMINI_MODEL', 'gemini-1.5-flash')
-                model = genai.GenerativeModel(model_name)  # type: ignore
+                model = genai.GenerativeModel(model_name)
                 print(f"[채팅봇] Google Gemini 모델 '{model_name}' 초기화 완료")
                 return model
             except Exception as e:
@@ -55,33 +48,41 @@ class ChatBot:
             return None
 
     def start_conversation(self, selected_themes: List[str]) -> str:
-        """선택된 테마를 바탕으로 대화 시작"""
+        """선택된 테마를 바탕으로 자연스러운 대화 시작"""
         self.user_interests = selected_themes
-        self.extracted_info['themes'] = selected_themes
         
-        # 대화 시작 프롬프트
         themes_text = ', '.join(selected_themes) if selected_themes else '여행'
         
         start_prompt = f"""
-        당신은 인천 제물포구 지역의 친근한 관광 가이드입니다. 
-        사용자가 다음 테마에 관심을 보였습니다: {themes_text}
+        당신은 인천 제물포구의 친근한 현지 가이드입니다. 
+        사용자가 '{themes_text}' 테마에 관심을 보였습니다.
         
-        사용자의 여행 계획을 자연스럽게 파악하기 위해 대화를 시작해주세요.
+        자연스럽고 친근하게 대화를 시작해주세요. 
         
-        다음 정보들을 자연스럽게 알아내야 합니다:
-        - 예산 (저렴/보통/고급)
-        - 함께 가는 사람 수
-        - 여행 시간 (반나절/하루종일)
-        - 이동 수단 (도보/대중교통/자동차)
-        - 특별한 요청사항이나 선호도
+        수집 권장 정보 (상황에 따라 유연하게):
+        - 여행 동행자 (혼자/연인/가족/친구 등)
+        - 관심 활동 (산책/쇼핑/맛집/역사탐방/체험 등)  
+        - 선호 분위기 (조용히/활발하게/로맨틱/캐주얼 등)
+        - 특별한 요청사항 (있다면)
         
-        첫 인사말을 친근하고 자연스럽게 해주세요. 
-        선택한 테마를 언급하면서 시작하되, 질문은 한 번에 하나씩만 해주세요.
+        참고사항:
+        - 모든 정보를 다 수집할 필요 없음
+        - 2-3개 정보만 있어도 좋은 패스 생성 가능
+        - 사용자가 간단히 답변하면 빠르게 마무리
+        
+        규칙:
+        - 첫 인사는 간단하고 따뜻하게
+        - 선택한 테마를 자연스럽게 언급
+        - 구체적인 질문보다는 열린 질문으로 시작
+        - 응답은 2-3문장 정도로 짧게
+        - 제물포의 매력을 살짝 어필
+        
+        예시: "안녕하세요! 제물포에서 {themes_text} 여행을 계획하고 계시는군요. 이 동네는 정말 특별한 곳이 많아요! 어떤 분위기의 여행을 생각하고 계세요?"
         """
         
         try:
             if not self.model:
-                return "안녕하세요! 제물포GO에 오신 것을 환영합니다. 선택하신 테마를 바탕으로 맞춤 여행을 계획해드릴게요!"
+                raise Exception("AI 모델이 초기화되지 않았습니다.")
             
             response = self.model.generate_content(start_prompt)
             bot_message = response.text.strip()
@@ -98,10 +99,10 @@ class ChatBot:
             
         except Exception as e:
             print(f"[채팅봇] 대화 시작 실패: {e}")
-            return f"안녕하세요! {themes_text} 테마로 멋진 제물포 여행을 계획해보세요! 어떤 분위기의 여행을 원하시나요?"
+            raise Exception(f"대화 시작 중 오류가 발생했습니다: {str(e)}")
 
     def continue_conversation(self, user_message: str) -> Dict[str, Any]:
-        """사용자 메시지를 받아 대화 계속하기"""
+        """사용자 메시지를 받아 자연스럽게 대화 계속하기"""
         
         # 사용자 메시지 기록
         self.conversation_history.append({
@@ -113,47 +114,50 @@ class ChatBot:
         # 대화 히스토리 구성
         conversation_context = self._build_conversation_context()
         
-        # AI 응답 생성
+        # 대화 단계 판단
+        user_turns = len([msg for msg in self.conversation_history if msg['type'] == 'user'])
+        
         prompt = f"""
-        당신은 인천 제물포구 지역의 친근한 관광 가이드입니다.
+        당신은 인천 제물포구 지역의 친근한 관광 가이드 '제물포GO'입니다.
         
         현재까지의 대화:
         {conversation_context}
         
         사용자의 최신 메시지: "{user_message}"
+        현재 사용자 발언 횟수: {user_turns}번
         
-        다음 정보들을 자연스럽게 파악해야 합니다:
-        - 예산 (저렴/보통/고급)
-        - 함께 가는 사람 수
-        - 여행 시간 (반나절/하루종일)  
-        - 이동 수단 (도보/대중교통/자동차)
-        - 특별한 요청사항이나 선호도
+        당신의 역할:
+        1. 제물포 관광에 대해 친근하고 자연스럽게 대화하기
+        2. 간단하고 핵심적인 정보만 수집하기 (너무 깊게 파지 않기)
+        3. 적절한 시점에서 대화 마무리 판단하기
         
-        현재 파악된 정보:
-        - 관심 테마: {', '.join(self.user_interests)}
-        - 예산: {self.extracted_info.get('budget', '미파악')}
-        - 인원: {self.extracted_info.get('group_size', '미파악')}
-        - 시간: {self.extracted_info.get('duration', '미파악')}
-        - 교통: {self.extracted_info.get('transportation', '미파악')}
+        유동적 정보 수집 (상황에 따라 3-4개만 수집해도 충분):
+        - 동행자 정보 (혼자, 연인, 가족, 친구 등)
+        - 관심 활동이나 분위기 (산책, 역사탐방, 맛집, 쇼핑 등)
+        - 간단한 선호도 (조용히/활발하게, 실내/야외 등)
+        - 특별한 요구사항이 있다면
         
-        규칙:
-        1. 친근하고 자연스럽게 대화하세요
-        2. 질문은 한 번에 하나씩만 하세요
-        3. 아직 파악하지 못한 정보가 있으면 자연스럽게 물어보세요
-        4. 충분한 정보가 모이면 "정보 수집 완료"를 언급하세요
-        5. 제물포구 지역의 매력을 어필하세요
+        대화 마무리 판단 기준:
+        - 최소 4번의 대화 교환은 진행 (사용자 2번, 봇 2번 이상)
+        - 동행자 + 관심사 3-4개 파악 후 요약 단계로 진입
+        - 요약 제시 후 "더 하고 싶은 말이 있는지" 확인
+        - 사용자가 "없다" 또는 "괜찮다"고 하면 그때 finish=true
+        
+        대화 진행 단계:
+        1. 기본 정보 수집 (최소 4번 교환)
+        2. 요약 제시 + 추가 의견 묻기 (1번)
+        3. 사용자 확인 후 마무리 (1번)
+        
+        응답 규칙:
+        - 1-2문장으로 짧고 친근하게 응답 필수
+        - 사용자 발언 3번째부터는 요약 단계 진입 고려
+        - 요약 시: "지금까지 말씀해주신 내용을 정리해보면... 더 추가하고 싶은 말씀이나 특별한 요청사항이 있으실까요?"
+        - 요약 후 사용자 확인을 받으면 그때 finish=true
         
         응답 형식:
         {{
-            "bot_message": "사용자에게 보낼 메시지",
-            "extracted_info": {{
-                "budget": "저렴/보통/고급 중 하나 또는 null",
-                "group_size": 숫자 또는 null,
-                "duration": "반나절/하루종일 중 하나 또는 null",
-                "transportation": "도보/대중교통/자동차 중 하나 또는 null",
-                "special_requests": ["파악된 특별 요청사항들"]
-            }},
-            "conversation_complete": true/false
+            "message": "사용자에게 보낼 친근한 메시지",
+            "finish": true/false
         }}
         
         JSON 형식으로만 응답해주세요.
@@ -161,7 +165,7 @@ class ChatBot:
         
         try:
             if not self.model:
-                return self._fallback_response(user_message)
+                raise Exception("AI 모델이 초기화되지 않았습니다.")
             
             response = self.model.generate_content(prompt)
             response_text = response.text.strip()
@@ -174,136 +178,114 @@ class ChatBot:
             
             result = json.loads(response_text)
             
-            # 추출된 정보 업데이트
-            extracted = result.get('extracted_info', {})
-            for key, value in extracted.items():
-                if value is not None:
-                    if key == 'special_requests':
-                        self.extracted_info[key].extend(value)
-                    else:
-                        self.extracted_info[key] = value
-            
             # 봇 메시지 기록
-            bot_message = result.get('bot_message', '계속해서 이야기해주세요!')
+            bot_message = result.get('message', '계속해서 이야기해주세요!')
             self.conversation_history.append({
                 'type': 'bot',
                 'message': bot_message,
                 'timestamp': datetime.now().isoformat()
             })
             
-            print(f"[채팅봇] 정보 업데이트: {self.extracted_info}")
+            conversation_complete = result.get('finish', False)
+            
+            # 대화가 완료되면 요약 생성
+            if conversation_complete:
+                self.conversation_summary = self._generate_conversation_summary()
+            
+            print(f"[채팅봇] 대화 진행 - 완료여부: {conversation_complete}")
             
             return {
                 'bot_message': bot_message,
-                'extracted_info': self.extracted_info.copy(),
-                'conversation_complete': result.get('conversation_complete', False),
-                'conversation_history': self.conversation_history.copy()
+                'conversation_complete': conversation_complete,
+                'conversation_history': self.conversation_history.copy(),
+                'conversation_summary': self.conversation_summary if conversation_complete else ""
             }
             
         except Exception as e:
             print(f"[채팅봇] 대화 처리 실패: {e}")
-            return self._fallback_response(user_message)
+            raise Exception(f"대화 처리 중 오류가 발생했습니다: {str(e)}")
 
     def _build_conversation_context(self) -> str:
         """대화 히스토리를 텍스트로 구성"""
         context = []
-        for entry in self.conversation_history[-6:]:  # 최근 6개 메시지만
+        for entry in self.conversation_history[-8:]:  # 최근 8개 메시지만
             speaker = "가이드" if entry['type'] == 'bot' else "사용자"
             context.append(f"{speaker}: {entry['message']}")
         return '\n'.join(context)
 
-    def _fallback_response(self, user_message: str) -> Dict[str, Any]:
-        """AI 호출 실패시 폴백 응답"""
+    def _generate_conversation_summary(self) -> str:
+        """대화 내용을 요약해서 패스 생성용 정보로 변환"""
+        if not self.conversation_history:
+            return "기본 여행 계획"
         
-        # 간단한 키워드 기반 정보 추출
-        extracted = {}
+        # 전체 대화 내용 구성
+        full_conversation = []
+        for entry in self.conversation_history:
+            speaker = "가이드" if entry['type'] == 'bot' else "사용자"
+            full_conversation.append(f"{speaker}: {entry['message']}")
         
-        # 예산 관련 키워드
-        if any(word in user_message for word in ['저렴', '싸게', '절약', '가성비']):
-            extracted['budget'] = '저렴'
-        elif any(word in user_message for word in ['고급', '비싸게', '럭셔리', '프리미엄']):
-            extracted['budget'] = '고급'
-        elif any(word in user_message for word in ['적당', '보통', '평범']):
-            extracted['budget'] = '보통'
+        conversation_text = '\n'.join(full_conversation)
+        themes_text = ', '.join(self.user_interests) if self.user_interests else '일반 여행'
+        
+        summary_prompt = f"""
+        다음은 제물포 여행에 대한 사용자와 가이드의 대화입니다.
+        선택된 테마: {themes_text}
+        
+        대화 내용:
+        {conversation_text}
+        
+        이 대화를 바탕으로 사용자의 여행 니즈를 종합적으로 요약해주세요.
+        패스 생성 AI가 이해할 수 있도록 명확하고 구체적으로 작성해주세요.
+        
+        수집 가능한 정보들 (있는 것만 포함):
+        - 동행자 정보 (관계, 인원수, 연령대, 특성)
+        - 예산 범위와 소비 성향
+        - 여행 시간대와 일정
+        - 선호하는 이동 방식  
+        - 식사 및 음료 선호도
+        - 활동 스타일과 관심사
+        - 특별한 요청사항이나 제약사항
+        - 사용자의 성격이나 여행 철학
+        
+        중요: 대화에서 언급되지 않은 정보는 추측하지 말고 생략하세요.
+        언급된 정보만으로도 충분히 좋은 패스를 생성할 수 있습니다.
+        
+        요약 형식:
+        "사용자는 [확인된 동행자 정보]와 함께 [테마] 관련 여행을 원한다. [언급된 조건들]이며, [확인된 선호도들]을 보인다."
+        
+        2-3문장으로 대화에서 실제 언급된 내용만 간결하게 요약해주세요.
+        """
+        
+        try:
+            if not self.model:
+                raise Exception("AI 모델이 초기화되지 않았습니다.")
             
-        # 인원 관련 키워드
-        numbers = ['혼자', '둘이', '셋이', '넷이', '다섯']
-        for i, num_word in enumerate(numbers):
-            if num_word in user_message:
-                extracted['group_size'] = i + 1
-                break
-        
-        # 시간 관련 키워드  
-        if any(word in user_message for word in ['하루', '하루종일', '오래']):
-            extracted['duration'] = '하루종일'
-        elif any(word in user_message for word in ['반나절', '짧게', '잠깐']):
-            extracted['duration'] = '반나절'
+            response = self.model.generate_content(summary_prompt)
+            summary = response.text.strip()
             
-        # 교통 관련 키워드
-        if any(word in user_message for word in ['걸어', '도보', '산책']):
-            extracted['transportation'] = '도보'
-        elif any(word in user_message for word in ['차', '자동차', '드라이브']):
-            extracted['transportation'] = '자동차'
-        elif any(word in user_message for word in ['버스', '지하철', '대중교통']):
-            extracted['transportation'] = '대중교통'
-        
-        # 추출된 정보 업데이트
-        for key, value in extracted.items():
-            self.extracted_info[key] = value
-        
-        # 간단한 응답 생성
-        missing_info = []
-        if not self.extracted_info.get('budget') or self.extracted_info['budget'] == '보통':
-            missing_info.append('예산')
-        if not self.extracted_info.get('group_size') or self.extracted_info['group_size'] == 2:
-            missing_info.append('인원수')
-        if not self.extracted_info.get('duration') or self.extracted_info['duration'] == '반나절':
-            missing_info.append('여행시간')
-        if not self.extracted_info.get('transportation') or self.extracted_info['transportation'] == '도보':
-            missing_info.append('이동수단')
-        
-        if missing_info:
-            bot_message = f"네, 알겠습니다! 혹시 {missing_info[0]}은 어떻게 생각하고 계신가요?"
-        else:
-            bot_message = "완벽해요! 이제 멋진 제물포 여행 패스를 만들어드릴게요!"
-        
-        self.conversation_history.append({
-            'type': 'bot',
-            'message': bot_message,
-            'timestamp': datetime.now().isoformat()
-        })
-        
-        return {
-            'bot_message': bot_message,
-            'extracted_info': self.extracted_info.copy(),
-            'conversation_complete': len(missing_info) == 0,
-            'conversation_history': self.conversation_history.copy()
-        }
+            print(f"[채팅봇] 대화 요약 생성 완료: {summary[:50]}...")
+            return summary
+            
+        except Exception as e:
+            print(f"[채팅봇] 요약 생성 실패: {e}")
+            raise Exception(f"대화 요약 생성 중 오류가 발생했습니다: {str(e)}")
 
-    def get_final_preferences(self) -> Dict[str, Any]:
-        """최종 사용자 선호도 반환 (패스 생성용)"""
+    def get_conversation_summary(self) -> str:
+        """대화 요약 반환 (패스 생성용)"""
+        return self.conversation_summary
+
+    def get_basic_preferences(self) -> Dict[str, Any]:
+        """기본 선호도 정보 반환 (패스 생성용)"""
         return {
-            'budget': self.extracted_info.get('budget', '보통'),
             'interests': self.user_interests,
-            'dietary_restrictions': [],
-            'group_size': self.extracted_info.get('group_size', 2),
-            'duration': self.extracted_info.get('duration', '반나절'),
-            'transportation': self.extracted_info.get('transportation', '도보'),
-            'special_requests': self.extracted_info.get('special_requests', [])
+            'conversation_summary': self.conversation_summary
         }
 
     def reset_conversation(self):
         """대화 초기화"""
         self.conversation_history = []
         self.user_interests = []
-        self.extracted_info = {
-            'themes': [],
-            'budget': '보통',
-            'group_size': 2,
-            'duration': '반나절',
-            'transportation': '도보',
-            'special_requests': []
-        }
+        self.conversation_summary = ""
         print("[채팅봇] 대화 초기화 완료")
 
 

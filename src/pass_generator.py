@@ -327,6 +327,143 @@ class PassGenerator:
             print(f"[패스 생성기] 패스 저장 중 오류: {e}")
             return False
 
+    def generate_pass_from_conversation(self, conversation_summary: str, selected_themes: List[str], 
+                                       pass_type: PassType, theme: Theme) -> Optional[Pass]:
+        """
+        대화 요약을 바탕으로 패스 생성
+        사용자의 대화 내용을 분석해서 맞춤형 패스를 생성합니다.
+        """
+        try:
+            print(f"[패스 생성기] 대화 기반 패스 생성 시작 - 타입: {pass_type.value}, 테마: {theme.value}")
+            
+            # 1. 데이터 로드
+            all_stores = self.load_stores()
+            all_benefits = self.load_benefits()
+            
+            if not all_stores or not all_benefits:
+                print("[패스 생성기] ❌ 상점 또는 혜택 데이터 로드 실패")
+                return None
+            
+            # 2. 대화 요약을 바탕으로 AI 추천 받기
+            if self.model:
+                recommended_store_names = self._get_ai_recommendations_from_conversation(
+                    conversation_summary, selected_themes, all_stores, pass_type, theme
+                )
+                
+                if not recommended_store_names:
+                    print("[패스 생성기] AI 추천 실패, 테마 기반 필터링 사용")
+                    filtered_stores = self.filter_stores_by_theme(all_stores, theme)
+                    recommended_store_names = [store.name for store in filtered_stores[:5]]
+            else:
+                print("[패스 생성기] AI 모델 없음, 테마 기반 필터링 사용")
+                filtered_stores = self.filter_stores_by_theme(all_stores, theme)
+                recommended_store_names = [store.name for store in filtered_stores[:5]]
+            
+            if not recommended_store_names:
+                print("[패스 생성기] ❌ 추천된 상점이 없습니다")
+                return None
+            
+            # 3. 상점과 혜택 매칭
+            recommended_stores, store_benefits = self.match_stores_and_benefits(
+                recommended_store_names, all_stores, all_benefits
+            )
+            
+            if not recommended_stores:
+                print("[패스 생성기] ❌ 매칭된 상점이 없습니다")
+                return None
+            
+            # 4. 기본 UserPrefs 생성 (대화 요약 기반)
+            user_prefs = UserPrefs(
+                budget='보통',
+                interests=selected_themes,
+                dietary_restrictions=[],
+                group_size=2,
+                duration='반나절',
+                transportation='도보'
+            )
+            
+            # 5. 패스 객체 생성
+            pass_obj = self.create_pass_object(
+                user_prefs, pass_type, theme, recommended_stores, store_benefits
+            )
+            
+            # 6. 패스 저장
+            if self.save_pass_to_file(pass_obj):
+                print(f"[패스 생성기] ✅ 대화 기반 패스 생성 및 저장 완료: {pass_obj.pass_id}")
+            else:
+                print(f"[패스 생성기] 대화 기반 패스 생성 완료, 저장 실패: {pass_obj.pass_id}")
+            
+            return pass_obj
+            
+        except Exception as e:
+            print(f"[패스 생성기] ❌ 대화 기반 패스 생성 중 오류: {e}")
+            return None
+
+    def _get_ai_recommendations_from_conversation(self, conversation_summary: str, selected_themes: List[str],
+                                                 all_stores: List[Store], pass_type: PassType, theme: Theme) -> List[str]:
+        """대화 요약을 바탕으로 AI 추천 받기"""
+        try:
+            # 테마별 상점 필터링
+            filtered_stores = self.filter_stores_by_theme(all_stores, theme)
+            
+            # 상점 정보 요약 (Store 모델의 실제 속성 사용)
+            stores_info = []
+            for store in filtered_stores[:15]:  
+                stores_info.append(f"이름: {store.name}, 카테고리: {store.category}")
+            
+            # PassType별 제한사항
+            type_limits = {
+                PassType.LIGHT: 3,
+                PassType.PREMIUM: 5,
+                PassType.CITIZEN: 4
+            }
+            
+            limit = type_limits.get(pass_type, 3)
+            themes_text = ', '.join(selected_themes) if selected_themes else theme.value
+            
+            prompt = f"""
+            사용자 대화 요약: {conversation_summary}
+            선택된 테마: {themes_text}
+            패스 타입: {pass_type.value} (상점 {limit}개 추천)
+            
+            제물포 지역 {theme.value} 테마 상점 목록:
+            {chr(10).join(stores_info)}
+            
+            사용자의 대화 내용과 선택한 테마를 바탕으로 가장 적합한 상점 {limit}개를 추천해주세요.
+            각 상점이 사용자에게 왜 적합한지 간단한 이유도 함께 설명해주세요.
+            
+            응답 형식:
+            {{
+                "recommended_stores": ["상점명1", "상점명2", "상점명3"],
+                "reasoning": "추천 이유 설명"
+            }}
+            
+            JSON 형식으로만 응답해주세요.
+            """
+            
+            response = self.model.generate_content(prompt)
+            response_text = response.text.strip()
+            
+            # JSON 파싱
+            if response_text.startswith('```json'):
+                response_text = response_text[7:-3]
+            elif response_text.startswith('```'):
+                response_text = response_text[3:-3]
+            
+            result = json.loads(response_text)
+            
+            recommended_store_names = result.get('recommended_stores', [])
+            reasoning = result.get('reasoning', '')
+            
+            print(f"[패스 생성기] AI 추천 완료 - 상점: {len(recommended_store_names)}개")
+            print(f"[패스 생성기] 추천 이유: {reasoning[:100]}...")
+            
+            return recommended_store_names
+            
+        except Exception as e:
+            print(f"[패스 생성기] AI 추천 실패: {e}")
+            return []
+
     def generate_pass(self, user_prefs: UserPrefs, pass_type: PassType, theme: Theme) -> Optional[Pass]:
         """
         메인 패스 생성 함수

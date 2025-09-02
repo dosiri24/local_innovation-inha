@@ -342,7 +342,6 @@ def register_routes(app):
                 'success': True,
                 'session_id': session_id,
                 'bot_message': bot_message,
-                'extracted_info': chatbot.extracted_info,
                 'conversation_history': chatbot.conversation_history
             })
             
@@ -378,9 +377,9 @@ def register_routes(app):
             return jsonify({
                 'success': True,
                 'bot_message': result['bot_message'],
-                'extracted_info': result['extracted_info'],
                 'conversation_complete': result['conversation_complete'],
-                'conversation_history': result['conversation_history']
+                'conversation_history': result['conversation_history'],
+                'conversation_summary': result.get('conversation_summary', '')
             })
             
         except Exception as e:
@@ -409,18 +408,16 @@ def register_routes(app):
             # 채팅봇 인스턴스 가져오기
             chatbot = get_chatbot(session_id)
             
-            # 최종 사용자 선호도 가져오기
-            preferences = chatbot.get_final_preferences()
+            # 대화 요약과 기본 정보 가져오기
+            basic_prefs = chatbot.get_basic_preferences()
+            conversation_summary = chatbot.get_conversation_summary()
             
-            # UserPrefs 객체 생성
-            user_prefs = UserPrefs(
-                budget=preferences.get('budget', '보통'),
-                interests=preferences.get('interests', []),
-                dietary_restrictions=preferences.get('dietary_restrictions', []),
-                group_size=preferences.get('group_size', 2),
-                duration=preferences.get('duration', '반나절'),
-                transportation=preferences.get('transportation', '도보')
-            )
+            if not conversation_summary:
+                return jsonify({'error': '대화가 완료되지 않았습니다.'}), 400
+            
+            # 패스 생성기 가져오기
+            from pass_generator import get_pass_generator
+            pass_generator = get_pass_generator()
             
             # PassType과 Theme 변환
             pass_type_mapping = {
@@ -454,14 +451,19 @@ def register_routes(app):
             pass_type = pass_type_mapping.get(pass_type_str.lower(), PassType.LIGHT)
             
             # 첫 번째 관심사를 기본 테마로 사용
-            first_interest = preferences.get('interests', ['맛집'])[0] if preferences.get('interests') else '맛집'
+            first_interest = basic_prefs.get('interests', ['맛집'])[0] if basic_prefs.get('interests') else '맛집'
             theme = theme_mapping.get(first_interest.lower(), Theme.FOOD)
             
             print(f"[채팅봇 API] 패스 생성 시작 - 타입: {pass_type.value}, 테마: {theme.value}")
-            print(f"[채팅봇 API] 사용자 선호도: {preferences}")
+            print(f"[채팅봇 API] 대화 요약: {conversation_summary[:100]}...")
             
-            # 패스 생성
-            generated_pass = generate_pass(user_prefs, pass_type, theme)
+            # 대화 요약을 바탕으로 패스 생성
+            generated_pass = pass_generator.generate_pass_from_conversation(
+                conversation_summary=conversation_summary,
+                selected_themes=basic_prefs.get('interests', []),
+                pass_type=pass_type,
+                theme=theme
+            )
             
             if not generated_pass:
                 return jsonify({'error': '조건에 맞는 패스를 생성할 수 없습니다.'}), 400
@@ -521,10 +523,11 @@ def register_routes(app):
                 'stores': [store.__dict__ for store in generated_pass.stores],
                 'benefits': enhanced_benefits,
                 'recommendations': recommendations,
-                'user_input': preferences,
+                'user_input': basic_prefs,
                 'conversation_summary': {
                     'chat_history': chatbot.conversation_history,
-                    'extracted_preferences': preferences
+                    'conversation_summary': conversation_summary,
+                    'basic_preferences': basic_prefs
                 }
             }
             
