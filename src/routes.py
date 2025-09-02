@@ -374,6 +374,21 @@ def register_routes(app):
             # 대화 계속하기
             result = chatbot.continue_conversation(user_message)
             
+            # 부적절한 대화 감지 시 세션 즉시 종료
+            if result.get('inappropriate', False):
+                print(f"[채팅봇 API] 부적절한 대화 감지 - 세션 {session_id} 종료")
+                clear_chatbot_session(session_id)
+                
+                return jsonify({
+                    'success': True,
+                    'bot_message': result.get('message', '죄송합니다. 부적절한 내용이 감지되어 대화를 종료합니다.'),
+                    'conversation_complete': True,
+                    'inappropriate': True,
+                    'terminate_chat': True,  # 프론트엔드에 채팅 종료 신호
+                    'conversation_history': result.get('conversation_history', []),
+                    'conversation_summary': ''
+                })
+            
             return jsonify({
                 'success': True,
                 'bot_message': result['bot_message'],
@@ -457,21 +472,69 @@ def register_routes(app):
             print(f"[채팅봇 API] 패스 생성 시작 - 타입: {pass_type.value}, 테마: {theme.value}")
             print(f"[채팅봇 API] 대화 요약: {conversation_summary[:100]}...")
             
-            # 대화 요약을 바탕으로 패스 생성
-            generated_pass = pass_generator.generate_pass_from_conversation(
-                conversation_summary=conversation_summary,
-                selected_themes=basic_prefs.get('interests', []),
-                pass_type=pass_type,
-                theme=theme
-            )
+            # 품질 기준을 만족하는 패스 생성 (최대 3회 시도)
+            max_attempts = 3
+            for attempt in range(1, max_attempts + 1):
+                print(f"[채팅봇 API] 패스 생성 시도 {attempt}/{max_attempts}")
+                
+                # 대화 요약을 바탕으로 패스 생성
+                generated_pass = pass_generator.generate_pass_from_conversation(
+                    conversation_summary=conversation_summary,
+                    selected_themes=basic_prefs.get('interests', []),
+                    pass_type=pass_type,
+                    theme=theme
+                )
+                
+                if not generated_pass:
+                    print(f"[채팅봇 API] 패스 생성 실패 - 시도 {attempt}")
+                    continue
+                
+                # 패스 타입별 가격 정보
+                pass_type_info = {
+                    'light': {'name': '스탠다드 패스', 'price': 9900},
+                    'premium': {'name': '프리미엄 패스', 'price': 14900},
+                    'citizen': {'name': '시민 우대 패스', 'price': 7000}
+                }
+                
+                pass_info = pass_type_info.get(generated_pass.pass_type.value, pass_type_info['light'])
+                
+                # 품질 검증
+                from services import validate_pass_quality
+                quality_result = validate_pass_quality(generated_pass, pass_info['price'])
+                
+                if quality_result['is_valid']:
+                    print(f"[채팅봇 API] 품질 기준 충족 - 패스 생성 완료")
+                    break
+                else:
+                    print(f"[채팅봇 API] 품질 기준 미달 - 재생성 필요 (시도 {attempt})")
+                    print(f"  가치 대비 효과: {quality_result['value_ratio']:.1f}% (요구: 150% 이상)")
+                    print(f"  평균 상생점수: {quality_result['avg_synergy']:.1f}점 (요구: 70점 이상)")
+                    
+                    if attempt == max_attempts:
+                        # 최종 시도 실패 시 기존 패스라도 반환
+                        print(f"[채팅봇 API] 최대 시도 횟수 초과 - 마지막 생성된 패스 반환")
+                        break
             
             if not generated_pass:
                 return jsonify({'error': '조건에 맞는 패스를 생성할 수 없습니다.'}), 400
             
             # 혜택 데이터에서 store_id를 실제 상점명으로 변환
-            from services import load_stores_raw
+            from services import load_stores_raw, load_benefits_raw
             stores_raw = load_stores_raw()
+            benefits_raw = load_benefits_raw()
+            
             store_id_to_name = {store['id']: store['name'] for store in stores_raw}
+            
+            # 혜택별 경제적 가치 맵핑
+            benefit_value_map = {}
+            for benefit_data in benefits_raw:
+                store_id = benefit_data.get('store_id', '')
+                desc = benefit_data.get('desc', '')
+                eco_value = benefit_data.get('eco_value', 3000)
+                benefit_value_map[f"{store_id}_{desc}"] = eco_value
+            
+            # AI가 생성한 상점별 선택 이유 가져오기
+            store_reasons = getattr(pass_generator, 'store_reasons', {})
             
             # 혜택 정보를 프론트엔드 형식으로 변환
             recommendations = []
@@ -480,29 +543,34 @@ def register_routes(app):
             for benefit in generated_pass.benefits:
                 store_name = store_id_to_name.get(benefit.store_name, benefit.store_name)
                 
+                # 실제 경제적 가치 계산
+                key = f"{benefit.store_name}_{benefit.description}"
+                eco_value = benefit_value_map.get(key, 3000)
+                
+                # AI가 제공한 상점별 선택 이유 가져오기
+                ai_reason = store_reasons.get(store_name, f'{store_name}에서 제공하는 사용자 맞춤 혜택입니다.')
+                
                 # 프론트엔드용 형식
                 recommendations.append({
                     'benefit_id': f'B{len(recommendations)+1:03d}',
                     'store_name': store_name,
                     'benefit_desc': benefit.description,
-                    'eco_value': 3500,  # 임시값
-                    'reason': f'{store_name}에서 제공하는 특별 혜택입니다.'
+                    'eco_value': eco_value,
+                    'reason': ai_reason
                 })
                 
                 # 기존 API용 형식
                 enhanced_benefit = benefit.__dict__.copy()
                 enhanced_benefit['store_name'] = store_name
+                enhanced_benefit['ai_reason'] = ai_reason  # AI 선택 이유 추가
                 enhanced_benefits.append(enhanced_benefit)
             
-            # 패스 타입별 정보 설정
-            pass_type_info = {
-                'light': {'name': '스탠다드 패스', 'price': 9900},
-                'premium': {'name': '프리미엄 패스', 'price': 14900},
-                'citizen': {'name': '시민 우대 패스', 'price': 7000}
-            }
-            
-            pass_info = pass_type_info.get(generated_pass.pass_type.value, pass_type_info['light'])
+            # 패스 타입별 정보 설정 (이미 위에서 정의됨)
             total_value = sum(rec['eco_value'] for rec in recommendations)
+            
+            # 실제 상생점수 계산
+            from services import calculate_average_synergy_score
+            avg_synergy = calculate_average_synergy_score(generated_pass.stores)
             
             # 응답 데이터 구성
             result = {
@@ -518,7 +586,7 @@ def register_routes(app):
                     'benefits_count': len(generated_pass.benefits),
                     'total_value': total_value,
                     'value_ratio': int((total_value / pass_info['price']) * 100),
-                    'avg_synergy': 85.5
+                    'avg_synergy': round(avg_synergy, 1)
                 },
                 'stores': [store.__dict__ for store in generated_pass.stores],
                 'benefits': enhanced_benefits,
@@ -643,16 +711,70 @@ def register_routes(app):
                 pass_type = PassType.LIGHT
                 theme = Theme.FOOD
             
-            # 패스 생성
-            generated_pass = generate_pass(user_prefs, pass_type, theme)
+            # 패스 생성 - 품질 기준을 만족하는 패스 생성 (최대 3회 시도)
+            max_attempts = 3
+            generated_pass = None
+            
+            for attempt in range(1, max_attempts + 1):
+                print(f"[패스 생성 API] 패스 생성 시도 {attempt}/{max_attempts}")
+                
+                # 패스 생성
+                current_pass = generate_pass(user_prefs, pass_type, theme)
+                
+                if not current_pass:
+                    print(f"[패스 생성 API] 패스 생성 실패 - 시도 {attempt}")
+                    continue
+                
+                # 패스 타입별 가격 정보
+                pass_type_info = {
+                    'light': {'name': '라이트 패스', 'price': 7900},
+                    'premium': {'name': '프리미엄 패스', 'price': 14900},
+                    'citizen': {'name': '시민 패스', 'price': 6900}
+                }
+                
+                pass_info = pass_type_info.get(current_pass.pass_type.value, pass_type_info['light'])
+                
+                # 품질 검증
+                from services import validate_pass_quality
+                quality_result = validate_pass_quality(current_pass, pass_info['price'])
+                
+                if quality_result['is_valid']:
+                    print(f"[패스 생성 API] 품질 기준 충족 - 패스 생성 완료")
+                    generated_pass = current_pass
+                    break
+                else:
+                    print(f"[패스 생성 API] 품질 기준 미달 - 재생성 필요 (시도 {attempt})")
+                    print(f"  가치 대비 효과: {quality_result['value_ratio']:.1f}% (요구: 150% 이상)")
+                    print(f"  평균 상생점수: {quality_result['avg_synergy']:.1f}점 (요구: 70점 이상)")
+                    
+                    if attempt == max_attempts:
+                        # 최종 시도 실패 시 기존 패스라도 반환
+                        print(f"[패스 생성 API] 최대 시도 횟수 초과 - 마지막 생성된 패스 반환")
+                        generated_pass = current_pass
+                        break
             
             if not generated_pass:
                 return jsonify({'error': '조건에 맞는 패스를 생성할 수 없습니다.'}), 400
             
             # 혜택 데이터에서 store_id를 실제 상점명으로 변환
-            from services import load_stores_raw
+            from services import load_stores_raw, load_benefits_raw, calculate_average_synergy_score
             stores_raw = load_stores_raw()
+            benefits_raw = load_benefits_raw()
+            
             store_id_to_name = {store['id']: store['name'] for store in stores_raw}
+            
+            # 혜택별 경제적 가치 맵핑
+            benefit_value_map = {}
+            for benefit_data in benefits_raw:
+                store_id = benefit_data.get('store_id', '')
+                desc = benefit_data.get('desc', '')
+                eco_value = benefit_data.get('eco_value', 3000)
+                benefit_value_map[f"{store_id}_{desc}"] = eco_value
+            
+            # AI가 생성한 상점별 선택 이유 가져오기 (일반 패스 생성 API용)
+            from pass_generator import get_pass_generator
+            generator = get_pass_generator()
+            store_reasons = getattr(generator, 'store_reasons', {})
             
             # 혜택 정보를 프론트엔드 형식으로 변환
             recommendations = []
@@ -661,29 +783,33 @@ def register_routes(app):
             for benefit in generated_pass.benefits:
                 store_name = store_id_to_name.get(benefit.store_name, benefit.store_name)
                 
+                # 실제 경제적 가치 계산
+                key = f"{benefit.store_name}_{benefit.description}"
+                eco_value = benefit_value_map.get(key, 3000)
+                
+                # AI가 제공한 상점별 선택 이유 가져오기
+                ai_reason = store_reasons.get(store_name, f'{store_name}에서 제공하는 사용자 맞춤 혜택입니다.')
+                
                 # 프론트엔드용 형식
                 recommendations.append({
                     'benefit_id': f'B{len(recommendations)+1:03d}',
                     'store_name': store_name,
                     'benefit_desc': benefit.description,
-                    'eco_value': 3500,  # 임시값, 실제로는 benefit에서 가져와야 함
-                    'reason': f'{store_name}에서 제공하는 특별 혜택입니다.'
+                    'eco_value': eco_value,
+                    'reason': ai_reason
                 })
                 
                 # 기존 API용 형식
                 enhanced_benefit = benefit.__dict__.copy()
                 enhanced_benefit['store_name'] = store_name
+                enhanced_benefit['ai_reason'] = ai_reason  # AI 선택 이유 추가
                 enhanced_benefits.append(enhanced_benefit)
             
-            # 패스 타입별 정보 설정 (light, premium, citizen만)
-            pass_type_info = {
-                'light': {'name': '라이트 패스', 'price': 7900},
-                'premium': {'name': '프리미엄 패스', 'price': 14900},
-                'citizen': {'name': '시민 패스', 'price': 6900}
-            }
-            
-            pass_info = pass_type_info.get(generated_pass.pass_type.value, pass_type_info['light'])
+            # 패스 타입별 정보 설정 (이미 위에서 정의됨)
             total_value = sum(rec['eco_value'] for rec in recommendations)
+            
+            # 실제 상생점수 계산
+            avg_synergy = calculate_average_synergy_score(generated_pass.stores)
             
             print(f"[패스 정보] 패스 타입 값: {generated_pass.pass_type.value}")
             print(f"[패스 정보] 매핑된 정보: {pass_info}")
@@ -703,7 +829,7 @@ def register_routes(app):
                     'benefits_count': len(generated_pass.benefits),
                     'total_value': total_value,
                     'value_ratio': int((total_value / pass_info['price']) * 100),
-                    'avg_synergy': 85.5  # 임시값
+                    'avg_synergy': round(avg_synergy, 1)
                 },
                 'stores': [store.__dict__ for store in generated_pass.stores],
                 'benefits': enhanced_benefits,  # 기존 API 응답 유지

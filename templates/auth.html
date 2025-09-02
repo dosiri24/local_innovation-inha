@@ -533,6 +533,24 @@
             color: white;
         }
 
+        .system-message {
+            justify-content: center;
+            margin: 20px 0;
+        }
+
+        .system-message .message-content {
+            max-width: 80%;
+            text-align: center;
+        }
+
+        .system-message .message-text {
+            background: linear-gradient(45deg, #ffeaa7, #fdcb6e);
+            color: #2d3436;
+            font-weight: 500;
+            border-radius: 15px;
+            padding: 10px 20px;
+        }
+
         .message-content {
             flex: 1;
             max-width: 70%;
@@ -626,6 +644,16 @@
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+        }
+
+        /* Gemini 안내 문구 */
+        .gemini-notice {
+            text-align: center;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #888;
+            border-top: 1px solid #e1e1e1;
         }
 
         /* 대화 상태 표시 */
@@ -817,6 +845,9 @@
                         <div class="chat-input-container">
                             <input type="text" id="chat-input" placeholder="메시지를 입력하세요..." disabled>
                             <button type="button" id="chat-send-btn" disabled>전송</button>
+                        </div>
+                        <div class="gemini-notice">
+                            Powered by Gemini. 부적절한 대화는 차단될 수 있습니다.
                         </div>
                     </div>
                 </div>
@@ -1091,6 +1122,32 @@
                 hideTypingIndicator();
                 
                 if (data.success) {
+                    // 부적절한 대화 감지 시 채팅 완전 종료
+                    if (data.inappropriate || data.terminate_chat) {
+                        addBotMessage(data.bot_message);
+                        
+                        // 채팅 완전히 비활성화
+                        document.getElementById('chat-input').disabled = true;
+                        document.getElementById('chat-input').placeholder = '부적절한 대화로 인해 채팅이 종료되었습니다';
+                        document.getElementById('chat-send-btn').disabled = true;
+                        
+                        // 세션 초기화
+                        chatSessionId = null;
+                        conversationComplete = false;
+                        
+                        // 패스 생성 버튼 비활성화
+                        const generateBtn = document.getElementById('generate-btn');
+                        generateBtn.disabled = true;
+                        generateBtn.textContent = '부적절한 대화로 인해 패스 생성이 불가능합니다';
+                        
+                        // 추가 안내 메시지
+                        setTimeout(() => {
+                            addSystemMessage('⚠️ 부적절한 대화가 감지되어 채팅이 종료되었습니다. 페이지를 새로고침하여 다시 시작해주세요.');
+                        }, 1000);
+                        
+                        return;
+                    }
+                    
                     // 봇 응답 추가
                     addBotMessage(data.bot_message);
                     

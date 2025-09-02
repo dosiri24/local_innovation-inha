@@ -26,6 +26,7 @@ class PassGenerator:
         self.stores_cache = None
         self.benefits_cache = None
         self.stores_raw_cache = None
+        self.store_reasons = {}  # 상점별 선택 이유 저장
         
     def _initialize_ai_model(self):
         """Google Gemini AI 모델 초기화"""
@@ -345,19 +346,28 @@ class PassGenerator:
                 return None
             
             # 2. 대화 요약을 바탕으로 AI 추천 받기
+            store_reasons = {}
             if self.model:
-                recommended_store_names = self._get_ai_recommendations_from_conversation(
+                ai_result = self._get_ai_recommendations_from_conversation(
                     conversation_summary, selected_themes, all_stores, pass_type, theme
                 )
+                
+                if isinstance(ai_result, tuple) and len(ai_result) == 2:
+                    recommended_store_names, store_reasons = ai_result
+                else:
+                    recommended_store_names = []
+                    store_reasons = {}
                 
                 if not recommended_store_names:
                     print("[패스 생성기] AI 추천 실패, 테마 기반 필터링 사용")
                     filtered_stores = self.filter_stores_by_theme(all_stores, theme)
                     recommended_store_names = [store.name for store in filtered_stores[:5]]
+                    store_reasons = {store.name: f"{theme.value} 테마에 적합한 추천" for store in filtered_stores[:5]}
             else:
                 print("[패스 생성기] AI 모델 없음, 테마 기반 필터링 사용")
                 filtered_stores = self.filter_stores_by_theme(all_stores, theme)
                 recommended_store_names = [store.name for store in filtered_stores[:5]]
+                store_reasons = {store.name: f"{theme.value} 테마에 적합한 추천" for store in filtered_stores[:5]}
             
             if not recommended_store_names:
                 print("[패스 생성기] ❌ 추천된 상점이 없습니다")
@@ -371,6 +381,9 @@ class PassGenerator:
             if not recommended_stores:
                 print("[패스 생성기] ❌ 매칭된 상점이 없습니다")
                 return None
+            
+            # 상점별 이유 저장
+            self.store_reasons = store_reasons
             
             # 4. 기본 UserPrefs 생성 (대화 요약 기반)
             user_prefs = UserPrefs(
@@ -400,8 +413,8 @@ class PassGenerator:
             return None
 
     def _get_ai_recommendations_from_conversation(self, conversation_summary: str, selected_themes: List[str],
-                                                 all_stores: List[Store], pass_type: PassType, theme: Theme) -> List[str]:
-        """대화 요약을 바탕으로 AI 추천 받기"""
+                                                 all_stores: List[Store], pass_type: PassType, theme: Theme) -> tuple:
+        """대화 요약을 바탕으로 AI 추천 받기 (상점별 선택 이유 포함)"""
         try:
             # 테마별 상점 필터링
             filtered_stores = self.filter_stores_by_theme(all_stores, theme)
@@ -409,7 +422,7 @@ class PassGenerator:
             # 상점 정보 요약 (Store 모델의 실제 속성 사용)
             stores_info = []
             for store in filtered_stores[:15]:  
-                stores_info.append(f"이름: {store.name}, 카테고리: {store.category}")
+                stores_info.append(f"이름: {store.name}, 카테고리: {store.category}, 설명: {store.description}")
             
             # PassType별 제한사항
             type_limits = {
@@ -430,16 +443,28 @@ class PassGenerator:
             {chr(10).join(stores_info)}
             
             사용자의 대화 내용과 선택한 테마를 바탕으로 가장 적합한 상점 {limit}개를 추천해주세요.
-            각 상점이 사용자에게 왜 적합한지 간단한 이유도 함께 설명해주세요.
+            각 상점이 사용자에게 왜 적합한지 구체적인 이유를 설명해주세요.
             
             응답 형식:
             {{
-                "recommended_stores": ["상점명1", "상점명2", "상점명3"],
-                "reasoning": "추천 이유 설명"
+                "recommended_stores": [
+                    {{
+                        "name": "상점명1",
+                        "reason": "이 상점을 선택한 구체적인 이유 (사용자 요청사항과 연결)"
+                    }},
+                    {{
+                        "name": "상점명2", 
+                        "reason": "이 상점을 선택한 구체적인 이유 (사용자 요청사항과 연결)"
+                    }}
+                ],
+                "overall_reasoning": "전체적인 추천 이유"
             }}
             
             JSON 형식으로만 응답해주세요.
             """
+            
+            if not self.model:
+                raise ValueError("AI 모델이 초기화되지 않았습니다.")
             
             response = self.model.generate_content(prompt)
             response_text = response.text.strip()
@@ -452,17 +477,32 @@ class PassGenerator:
             
             result = json.loads(response_text)
             
-            recommended_store_names = result.get('recommended_stores', [])
-            reasoning = result.get('reasoning', '')
+            recommended_stores_data = result.get('recommended_stores', [])
+            overall_reasoning = result.get('overall_reasoning', '')
             
-            print(f"[패스 생성기] AI 추천 완료 - 상점: {len(recommended_store_names)}개")
-            print(f"[패스 생성기] 추천 이유: {reasoning[:100]}...")
+            # 상점명과 이유를 분리
+            store_names = []
+            store_reasons = {}
             
-            return recommended_store_names
+            for store_data in recommended_stores_data:
+                if isinstance(store_data, dict):
+                    name = store_data.get('name', '')
+                    reason = store_data.get('reason', '')
+                    store_names.append(name)
+                    store_reasons[name] = reason
+                else:
+                    # 기존 형식 호환성
+                    store_names.append(str(store_data))
+                    store_reasons[str(store_data)] = "사용자 선호도에 맞는 추천"
+            
+            print(f"[패스 생성기] AI 추천 완료 - 상점: {len(store_names)}개")
+            print(f"[패스 생성기] 전체 추천 이유: {overall_reasoning[:100]}...")
+            
+            return store_names, store_reasons
             
         except Exception as e:
             print(f"[패스 생성기] AI 추천 실패: {e}")
-            return []
+            return [], {}
 
     def generate_pass(self, user_prefs: UserPrefs, pass_type: PassType, theme: Theme) -> Optional[Pass]:
         """

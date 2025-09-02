@@ -77,6 +77,12 @@ class ChatBot:
         - 응답은 2-3문장 정도로 짧게
         - 제물포의 매력을 살짝 어필
         
+        중요 - 부적절한 대화 감지:
+        - 성적, 폭력적, 혐오 발언이 감지되면 대화를 즉시 중단
+        - 정치적, 종교적 논쟁성 발언도 차단
+        - 여행과 관련 없는 주제로 계속 전환 시도하면 경고 후 중단
+        - 부적절한 내용 감지 시 정중하게 대화 종료 안내
+        
         예시: "안녕하세요! 제물포에서 {themes_text} 여행을 계획하고 계시는군요. 이 동네는 정말 특별한 곳이 많아요! 어떤 분위기의 여행을 생각하고 계세요?"
         """
         
@@ -130,6 +136,21 @@ class ChatBot:
         1. 제물포 관광에 대해 친근하고 자연스럽게 대화하기
         2. 간단하고 핵심적인 정보만 수집하기 (너무 깊게 파지 않기)
         3. 적절한 시점에서 대화 마무리 판단하기
+        4. 부적절한 대화 감지 시 즉시 대화 종료하기
+        
+        부적절한 대화 감지 및 대응:
+        - 성적, 폭력적, 혐오적 내용이 포함된 경우
+        - 정치적, 종교적 논쟁성 발언
+        - 욕설, 비속어, 차별적 표현
+        - 여행과 전혀 관련 없는 주제로 계속 전환하려는 시도
+        - 개인정보 요구나 부적절한 만남 제안
+        
+        부적절한 대화 감지 시 응답:
+        {{
+            "message": "죄송합니다. 부적절한 내용이 감지되어 대화를 종료합니다. 제물포 여행 관련 대화만 가능합니다.",
+            "finish": true,
+            "inappropriate": true
+        }}
         
         유동적 정보 수집 (상황에 따라 3-4개만 수집해도 충분):
         - 동행자 정보 (혼자, 연인, 가족, 친구 등)
@@ -154,10 +175,17 @@ class ChatBot:
         - 요약 시: "지금까지 말씀해주신 내용을 정리해보면... 더 추가하고 싶은 말씀이나 특별한 요청사항이 있으실까요?"
         - 요약 후 사용자 확인을 받으면 그때 finish=true
         
-        응답 형식:
+        정상 응답 형식:
         {{
             "message": "사용자에게 보낼 친근한 메시지",
             "finish": true/false
+        }}
+        
+        부적절한 대화 감지 시 응답 형식:
+        {{
+            "message": "부적절한 내용 감지 안내 메시지",
+            "finish": true,
+            "inappropriate": true
         }}
         
         JSON 형식으로만 응답해주세요.
@@ -177,6 +205,23 @@ class ChatBot:
                 response_text = response_text[3:-3]
             
             result = json.loads(response_text)
+            
+            # 부적절한 대화 감지 확인
+            is_inappropriate = result.get('inappropriate', False)
+            if is_inappropriate:
+                print(f"[채팅봇] 부적절한 대화 감지 - 사용자: {user_message[:50]}...")
+                # 부적절한 대화 기록 (보안상 간단히)
+                self.conversation_history.append({
+                    'type': 'system',
+                    'message': '부적절한 대화로 인한 종료',
+                    'timestamp': datetime.now().isoformat()
+                })
+                
+                return {
+                    'message': result.get('message', '죄송합니다. 부적절한 내용이 감지되어 대화를 종료합니다.'),
+                    'finish': True,
+                    'inappropriate': True
+                }
             
             # 봇 메시지 기록
             bot_message = result.get('message', '계속해서 이야기해주세요!')
