@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>제물포GO 패스 이용하기 - 내 패스 관리</title>
+    <title>제물포GO 패스 사용하기 - 내 패스 관리</title>
     <style>
         * {
             margin: 0;
@@ -13,335 +13,287 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #16C2EE, #0FA3D1);
             min-height: 100vh;
-            color: #333;
-            line-height: 1.6;
+            padding: 20px;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(22, 194, 238, 0.2);
+            padding: 30px;
         }
 
         .header {
             text-align: center;
-            color: white;
             margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #f0f0f0;
         }
 
         .header h1 {
+            color: #16C2EE;
             font-size: 2.5em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 700;
         }
 
         .header p {
-            font-size: 1.2em;
-            opacity: 0.9;
-        }
-
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .no-passes {
-            text-align: center;
-            padding: 60px 20px;
-        }
-
-        .no-passes h3 {
-            color: #667eea;
-            font-size: 1.8em;
-            margin-bottom: 15px;
-        }
-
-        .no-passes p {
             color: #666;
             font-size: 1.1em;
+        }
+
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
             margin-bottom: 30px;
+            flex-wrap: wrap;
         }
 
-        .create-pass-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
+        .filter-btn {
+            padding: 10px 20px;
+            border: 2px solid #16C2EE;
+            background: white;
+            color: #16C2EE;
+            border-radius: 25px;
             cursor: pointer;
-            font-size: 16px;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-block;
-            transition: all 0.3s ease;
-            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s;
+            font-weight: 500;
         }
 
-        .create-pass-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 25px rgba(102, 126, 234, 0.4);
+        .filter-btn.active {
+            background: #16C2EE;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            background: #16C2EE;
+            color: white;
+            transform: translateY(-2px);
         }
 
         .passes-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
-            margin-top: 30px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
         }
 
         .pass-card {
-            background: linear-gradient(135deg, #ffffff, #f8f9ff);
+            background: linear-gradient(135deg, #16C2EE, #0FA3D1);
             border-radius: 15px;
-            padding: 25px;
-            border: 2px solid #e1e5ff;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
+            padding: 20px;
+            color: white;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 5px 15px rgba(22, 194, 238, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
         }
 
         .pass-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.12);
-            border-color: #667eea;
+            box-shadow: 0 8px 25px rgba(22, 194, 238, 0.4);
+        }
+
+        .pass-card::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
         }
 
         .pass-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 20px;
+            align-items: center;
+            margin-bottom: 15px;
         }
 
-        .pass-type {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 0.9em;
+        .pass-title {
+            font-size: 1.3em;
+            font-weight: 700;
+        }
+
+        .pass-status {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.8em;
             font-weight: 600;
         }
 
-        .pass-date {
-            color: #666;
-            font-size: 0.85em;
+        .status-active {
+            background: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
         }
 
-        .pass-info h3 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.3em;
+        .status-expired {
+            background: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+
+        .status-used {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+        }
+
+        .pass-info {
+            margin: 10px 0;
+        }
+
+        .pass-info div {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pass-info .label {
+            font-weight: 600;
+            opacity: 0.9;
+        }
+
+        .pass-info .value {
+            font-weight: 400;
         }
 
         .pass-stats {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
-            margin-bottom: 20px;
+            margin: 20px 0;
         }
 
         .stat-item {
             text-align: center;
-            padding: 12px;
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
             border-radius: 10px;
         }
 
-        .stat-value {
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #667eea;
+        .stat-number {
+            font-size: 1.8em;
+            font-weight: 700;
             margin-bottom: 5px;
         }
 
         .stat-label {
-            font-size: 0.85em;
-            color: #666;
+            font-size: 0.9em;
+            opacity: 0.8;
         }
 
         .pass-actions {
             display: flex;
             gap: 10px;
+            justify-content: center;
             margin-top: 20px;
-        }
-
-        .view-qr-btn, .view-details-btn {
-            flex: 1;
-            padding: 12px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            text-align: center;
-            font-size: 0.9em;
-        }
-
-        .view-qr-btn {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .view-qr-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         }
 
         .view-details-btn {
-            background: linear-gradient(45deg, #f8f9ff, #e6e9ff);
-            color: #667eea;
-            border: 1px solid #667eea;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            backdrop-filter: blur(10px);
         }
 
         .view-details-btn:hover {
-            background: linear-gradient(45deg, #e6e9ff, #d1d5ff);
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
         }
 
-        .qr-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px);
-        }
-
-        .qr-modal-content {
-            background: white;
-            margin: 5% auto;
-            padding: 40px;
-            border-radius: 20px;
-            width: 90%;
-            max-width: 500px;
+        .empty-state {
             text-align: center;
-            position: relative;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .qr-close {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            font-size: 28px;
-            font-weight: bold;
-            color: #aaa;
-            cursor: pointer;
-            transition: color 0.3s ease;
-        }
-
-        .qr-close:hover {
-            color: #667eea;
-        }
-
-        .qr-code-container {
-            margin: 30px 0;
-            padding: 20px;
-            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
-            border-radius: 15px;
-            border: 2px solid #e1e5ff;
-        }
-
-        .qr-code-image {
-            max-width: 250px;
-            max-height: 250px;
-            border-radius: 10px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-
-        .qr-info {
-            margin-top: 20px;
+            padding: 60px 20px;
             color: #666;
-            font-size: 0.95em;
         }
 
-        .loading {
-            display: none;
-            text-align: center;
-            padding: 60px;
+        .empty-state h3 {
+            margin-bottom: 15px;
+            color: #16C2EE;
+            font-size: 1.5em;
         }
 
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            font-size: 18px;
-            color: #667eea;
-            font-weight: 600;
-        }
-
-        .error {
-            background: linear-gradient(135deg, #fff5f5, #fed7d7);
-            color: #c53030;
-            padding: 20px;
-            border-radius: 12px;
-            border: 2px solid #fc8181;
-            margin-top: 20px;
-            text-align: center;
-            font-weight: 500;
+        .empty-state p {
+            margin-bottom: 25px;
         }
 
         .back-btn {
-            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-            color: white;
-            border: none;
-            padding: 12px 25px;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 20px 10px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-            text-decoration: none;
             display: inline-block;
+            background: linear-gradient(135deg, #16C2EE, #0FA3D1);
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 10px;
         }
 
         .back-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+            box-shadow: 0 5px 15px rgba(22, 194, 238, 0.4);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .page-btn {
+            padding: 8px 15px;
+            border: 2px solid #16C2EE;
+            background: white;
+            color: #16C2EE;
+            border-radius: 20px;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .page-btn.active {
+            background: #16C2EE;
+            color: white;
+        }
+
+        .page-btn:hover {
+            background: #16C2EE;
+            color: white;
         }
 
         @media (max-width: 768px) {
-            .passes-grid {
-                grid-template-columns: 1fr;
+            .container {
+                margin: 10px;
+                padding: 20px;
             }
-            
+
             .header h1 {
                 font-size: 2em;
             }
 
-            .main-container {
-                padding: 25px;
+            .filters {
+                flex-direction: column;
+                align-items: center;
             }
 
-            .pass-stats {
+            .passes-grid {
                 grid-template-columns: 1fr;
             }
 
-            .qr-modal-content {
-                margin: 10% auto;
-                padding: 30px;
-                width: 95%;
+            .pass-stats {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -349,143 +301,206 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎫 내 패스 이용하기</h1>
-            <p>생성한 제물포GO 패스를 확인하고 이용해보세요</p>
+            <h1>🎫 내 패스 관리</h1>
+            <p>생성한 패스들을 확인하고 관리하세요</p>
         </div>
 
-        <div class="main-container" id="main-content">
-            <div class="loading" id="loading">
-                <div class="spinner"></div>
-                <div class="loading-text">패스 목록을 불러오는 중...</div>
-            </div>
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterPasses('all')">전체</button>
+            <button class="filter-btn" onclick="filterPasses('active')">활성</button>
+            <button class="filter-btn" onclick="filterPasses('expired')">만료</button>
+            <button class="filter-btn" onclick="filterPasses('used')">사용완료</button>
+        </div>
 
-            <div id="no-passes" class="no-passes" style="display: none;">
-                <h3>🎯 아직 생성된 패스가 없습니다</h3>
-                <p>나만의 맞춤형 제물포GO 패스를 만들어보세요!</p>
-                <a href="/pass-generator" class="create-pass-btn">
-                    ✨ 첫 번째 패스 만들기
-                </a>
-            </div>
+        <div id="passes-container" class="passes-grid">
+            <!-- 패스 카드들이 여기에 동적으로 추가됩니다 -->
+        </div>
 
-            <div id="passes-container" style="display: none;">
-                <h2 style="color: #333; margin-bottom: 25px; text-align: center;">📋 내 패스 목록</h2>
-                <div class="passes-grid" id="passes-grid">
-                    <!-- 패스 카드들이 여기에 동적으로 추가됩니다 -->
-                </div>
-            </div>
+        <div id="empty-state" class="empty-state" style="display: none;">
+            <h3>🎯 아직 생성된 패스가 없습니다</h3>
+            <p>새로운 패스를 만들어서 제물포구 주변을 탐험해보세요!</p>
+        </div>
 
-            <div class="error" id="error" style="display: none;">
-                <!-- 오류 메시지가 여기에 표시됩니다 -->
-            </div>
+        <div class="pagination" id="pagination" style="display: none;">
+            <!-- 페이지네이션이 여기에 동적으로 추가됩니다 -->
+        </div>
 
-            <div style="text-align: center; margin-top: 40px;">
-                <a href="/main" class="back-btn">🏠 메인으로 돌아가기</a>
-                <a href="/pass-generator" class="back-btn" style="background: linear-gradient(45deg, #667eea, #764ba2);">➕ 새 패스 만들기</a>
-            </div>
+        <div style="text-align: center; margin-top: 40px;">
+            <a href="/main" class="back-btn">🏠 메인으로 돌아가기</a>
+            <a href="/pass-generator" class="back-btn">🎯 새 패스 만들기</a>
         </div>
     </div>
 
-    <!-- QR 코드 기능 제거됨 -->
-
     <script>
-        let userPasses = [];
+        let allPasses = [];
+        let filteredPasses = [];
+        let currentFilter = 'all';
+        let currentPage = 1;
+        const passesPerPage = 6;
 
-        // 페이지 로드 시 사용자 패스 목록 가져오기
+        // 페이지 로드시 패스 데이터 가져오기
         document.addEventListener('DOMContentLoaded', function() {
-            loadUserPasses();
+            loadPasses();
         });
 
-        // 사용자 패스 목록 로드
-        async function loadUserPasses() {
+        async function loadPasses() {
+            console.log('📋 패스 로딩 시작...');
+            
             try {
-                // 세션에서 사용자 정보를 자동으로 가져옵니다
                 const response = await fetch('/api/user/passes');
-                const data = await response.json();
-
-                document.getElementById('loading').style.display = 'none';
-
-                if (data.success && data.passes && data.passes.length > 0) {
-                    userPasses = data.passes;
-                    displayPasses(data.passes);
+                console.log('📡 API 응답 상태:', response.status);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('📊 API 응답 데이터:', data);
+                    
+                    if (data.success) {
+                        allPasses = data.passes || [];
+                        filteredPasses = allPasses;
+                        console.log(`✅ ${allPasses.length}개의 패스를 로드했습니다.`);
+                        
+                        if (data.debug_info) {
+                            console.log('🔍 디버그 정보:', data.debug_info);
+                        }
+                        
+                        displayPasses();
+                    } else {
+                        console.warn('⚠️ API 응답에서 success가 false:', data);
+                        showEmptyState(data.error || '패스 데이터를 가져올 수 없습니다.');
+                    }
                 } else {
-                    showNoPasses();
+                    console.error('❌ API 호출 실패:', response.status, response.statusText);
+                    
+                    // 401 Unauthorized인 경우 로그인 페이지로 리디렉션
+                    if (response.status === 401) {
+                        console.log('🔐 로그인이 필요합니다. 로그인 페이지로 이동...');
+                        window.location.href = '/';
+                        return;
+                    }
+                    
+                    showEmptyState(`서버 오류 (${response.status}): 잠시 후 다시 시도해주세요.`);
                 }
             } catch (error) {
-                console.error('패스 목록 로드 실패:', error);
-                document.getElementById('loading').style.display = 'none';
-                
-                // API 실패 시 실제 오류 메시지 표시
-                showNoPasses();
+                console.error('💥 패스 로딩 중 네트워크 오류:', error);
+                showEmptyState('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
             }
         }
 
-        // 패스 없음 표시
-        function showNoPasses() {
-            document.getElementById('no-passes').style.display = 'block';
-            document.getElementById('passes-container').style.display = 'none';
-        }
-
-        // 패스 목록 표시
-        function displayPasses(passes) {
-            document.getElementById('no-passes').style.display = 'none';
-            document.getElementById('passes-container').style.display = 'block';
+        function filterPasses(filter) {
+            currentFilter = filter;
+            currentPage = 1;
             
-            const passesGrid = document.getElementById('passes-grid');
-            passesGrid.innerHTML = '';
-
-            passes.forEach(pass => {
-                const passCard = createPassCard(pass);
-                passesGrid.appendChild(passCard);
+            // 필터 버튼 활성화 상태 변경
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
             });
+            event.target.classList.add('active');
+
+            // 패스 필터링
+            if (filter === 'all') {
+                filteredPasses = allPasses;
+            } else {
+                filteredPasses = allPasses.filter(pass => pass.status === filter);
+            }
+
+            displayPasses();
         }
 
-        // 패스 카드 생성
+        function displayPasses() {
+            const container = document.getElementById('passes-container');
+            const emptyState = document.getElementById('empty-state');
+
+            if (filteredPasses.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            emptyState.style.display = 'none';
+            container.style.display = 'grid';
+
+            const startIndex = (currentPage - 1) * passesPerPage;
+            const endIndex = startIndex + passesPerPage;
+            const pagePasses = filteredPasses.slice(startIndex, endIndex);
+
+            container.innerHTML = '';
+            pagePasses.forEach(pass => {
+                const passCard = createPassCard(pass);
+                container.appendChild(passCard);
+            });
+
+            updatePagination();
+        }
+
+        function showEmptyState(customMessage) {
+            const container = document.getElementById('passes-container');
+            const emptyState = document.getElementById('empty-state');
+            const pagination = document.getElementById('pagination');
+
+            container.style.display = 'none';
+            pagination.style.display = 'none';
+            
+            // 커스텀 메시지가 있으면 업데이트
+            if (customMessage) {
+                const messageElement = emptyState.querySelector('p');
+                if (messageElement) {
+                    messageElement.textContent = customMessage;
+                }
+            }
+            
+            emptyState.style.display = 'block';
+        }
+
         function createPassCard(pass) {
             const card = document.createElement('div');
             card.className = 'pass-card';
             
-            const createdDate = new Date(pass.created_at).toLocaleDateString('ko-KR');
-            
-            // 패스 타입별 가격 정보
-            const passTypeInfo = {
-                'light': { name: '라이트 패스', price: 7900 },
-                'premium': { name: '프리미엄 패스', price: 14900 },
-                'citizen': { name: '시민 패스', price: 6900 }
-            };
-            
-            const typeInfo = passTypeInfo[pass.pass_type] || { name: '패스', price: 0 };
-            
+            const statusClass = pass.status === 'active' ? 'status-active' : 
+                               pass.status === 'expired' ? 'status-expired' : 'status-used';
+            const statusText = pass.status === 'active' ? '활성' : 
+                              pass.status === 'expired' ? '만료' : '사용완료';
+
             card.innerHTML = `
                 <div class="pass-header">
-                    <div class="pass-type">${typeInfo.name}</div>
-                    <div class="pass-date">${createdDate}</div>
+                    <div class="pass-title">${pass.name || '무제'}</div>
+                    <div class="pass-status ${statusClass}">${statusText}</div>
                 </div>
                 
                 <div class="pass-info">
-                    <h3>패스 ID: ${pass.pass_id}</h3>
-                    
-                    <div class="pass-stats">
-                        <div class="stat-item">
-                            <div class="stat-value">${pass.store_count}개</div>
-                            <div class="stat-label">포함 매장</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${typeInfo.price.toLocaleString()}원</div>
-                            <div class="stat-label">패스 가격</div>
-                        </div>
+                    <div>
+                        <span class="label">생성일:</span>
+                        <span class="value">${formatDate(pass.created_at)}</span>
                     </div>
-                    
-                    <div style="background: rgba(102, 126, 234, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
-                        <div style="color: #667eea; font-weight: 600; margin-bottom: 8px;">🎯 테마</div>
-                        <div style="color: #666; font-size: 0.9em;">${pass.theme}</div>
-                        <div style="color: #667eea; font-weight: 600; margin: 8px 0 5px 0;">� 패스 타입</div>
-                        <div style="color: #666; font-size: 0.9em;">${pass.pass_type}</div>
+                    <div>
+                        <span class="label">유효기간:</span>
+                        <span class="value">${formatDate(pass.valid_until)}</span>
                     </div>
+                </div>
+                
+                <div class="pass-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">${pass.total_places || 0}</div>
+                        <div class="stat-label">총 장소</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${pass.visited_places || 0}</div>
+                        <div class="stat-label">방문 완료</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">${pass.total_price || 0}원</div>
+                        <div class="stat-label">패스 가격</div>
+                    </div>
+                </div>
+                
+                <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
+                    <div style="color: white; font-weight: 600; margin-bottom: 8px; opacity: 0.9;">패스 테마</div>
+                    <div style="color: white; font-size: 0.9em; opacity: 0.8;">${pass.theme}</div>
+                    <div style="color: white; font-weight: 600; margin: 8px 0 5px 0; opacity: 0.9;">패스 종류</div>
+                    <div style="color: white; font-size: 0.9em; opacity: 0.8;">${pass.pass_type}</div>
                 </div>
                 
                 <div class="pass-actions">
                     <a href="/pass/${pass.pass_id}" target="_blank" class="view-details-btn">
-                        📄 상세 보기
+                        패스 상세 보기
                     </a>
                 </div>
             `;
@@ -493,9 +508,69 @@
             return card;
         }
 
-        // QR 코드 기능 제거됨
+        function updatePagination() {
+            const pagination = document.getElementById('pagination');
+            const totalPages = Math.ceil(filteredPasses.length / passesPerPage);
 
-        // (QR 모달 제거됨)
+            if (totalPages <= 1) {
+                pagination.style.display = 'none';
+                return;
+            }
+
+            pagination.style.display = 'flex';
+            pagination.innerHTML = '';
+
+            // 이전 페이지 버튼
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('a');
+                prevBtn.href = '#';
+                prevBtn.className = 'page-btn';
+                prevBtn.textContent = '이전';
+                prevBtn.onclick = (e) => {
+                    e.preventDefault();
+                    currentPage--;
+                    displayPasses();
+                };
+                pagination.appendChild(prevBtn);
+            }
+
+            // 페이지 번호들
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('a');
+                pageBtn.href = '#';
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.textContent = i;
+                pageBtn.onclick = (e) => {
+                    e.preventDefault();
+                    currentPage = i;
+                    displayPasses();
+                };
+                pagination.appendChild(pageBtn);
+            }
+
+            // 다음 페이지 버튼
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('a');
+                nextBtn.href = '#';
+                nextBtn.className = 'page-btn';
+                nextBtn.textContent = '다음';
+                nextBtn.onclick = (e) => {
+                    e.preventDefault();
+                    currentPage++;
+                    displayPasses();
+                };
+                pagination.appendChild(nextBtn);
+            }
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
     </script>
 </body>
 </html>

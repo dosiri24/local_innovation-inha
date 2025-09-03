@@ -4,7 +4,7 @@
 """
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Any
 from dotenv import load_dotenv
 from models import Store, Benefit, UserPrefs, Pass, PassType, Theme
@@ -210,27 +210,202 @@ def redeem_code(code: str, pass_id: Optional[str], user_email: Optional[str]) ->
 # 패스 생성 기능은 pass_generator.py 모듈로 이동되었습니다.
 # 기존 generate_pass, save_pass_to_file 함수들은 pass_generator.py에서 처리합니다.
 
-def load_pass_from_file(pass_id: str) -> Optional[Pass]:
-    """파일에서 패스 로드"""
+def save_pass(pass_obj: Pass, user_email: str) -> Dict[str, Any]:
+    """패스를 파일로 저장하고 결과 반환"""
     try:
+        from pass_generator import get_pass_generator
+        generator = get_pass_generator()
+        
+        # 프로덕션 환경 감지
+        is_production = (
+            os.environ.get('GAE_ENV', '').startswith('standard') or 
+            os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+            'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+        )
+        
+        print(f"[패스 저장] 프로덕션 환경: {is_production}")
+        print(f"[패스 저장] 패스 ID: {pass_obj.pass_id}")
+        print(f"[패스 저장] 사용자: {user_email}")
+        
+        # 파일 시스템 저장 시도
+        file_success = generator.save_pass_to_file(pass_obj)
+        print(f"[패스 저장] 파일 저장 결과: {file_success}")
+        
+        # Datastore 저장 (프로덕션 환경에서 영구 저장)
+        datastore_success = False
+        if is_production:
+            try:
+                from src.datastore_service import save_pass_to_datastore
+                print(f"[패스 저장] Datastore 저장 시작")
+                datastore_success = save_pass_to_datastore(pass_obj, user_email)
+                print(f"[패스 저장] Datastore 저장 결과: {datastore_success}")
+            except Exception as datastore_error:
+                print(f"[패스 저장] Datastore 저장 실패: {datastore_error}")
+                import traceback
+                print(f"[패스 저장] Datastore 오류 세부사항: {traceback.format_exc()}")
+        
+        # 프로덕션 환경에서는 추가로 세션에도 저장 (백업)
+        session_success = False
+        if is_production:
+            try:
+                from flask import session
+                if 'saved_passes' not in session:
+                    session['saved_passes'] = []
+                
+                # 패스 데이터를 직렬화 가능한 형태로 변환
+                pass_data = {
+                    'pass_id': pass_obj.pass_id,
+                    'pass_type': pass_obj.pass_type.value,
+                    'theme': pass_obj.theme.value,
+                    'stores': [store.__dict__ for store in pass_obj.stores],
+                    'benefits': [benefit.__dict__ for benefit in pass_obj.benefits],
+                    'created_at': pass_obj.created_at,
+                    'user_prefs': pass_obj.user_prefs.__dict__,
+                    'user_email': user_email
+                }
+                
+                # 기존 패스 중복 제거
+                session['saved_passes'] = [
+                    p for p in session['saved_passes'] 
+                    if p.get('pass_id') != pass_obj.pass_id
+                ]
+                
+                # 새 패스 추가
+                session['saved_passes'].append(pass_data)
+                session.permanent = True
+                session_success = True
+                
+                print(f"[패스 저장] 세션에 백업 저장 완료: {len(session['saved_passes'])}개")
+                
+            except Exception as session_error:
+                print(f"[패스 저장] 세션 저장 실패: {session_error}")
+        
+        # 성공 여부 판단
+        success = file_success or datastore_success or (is_production and session_success)
+        
+        if success:
+            print(f"[패스 저장] 성공: {pass_obj.pass_id} (사용자: {user_email})")
+            
+            # 쿠키에도 패스 ID 백업 저장
+            cookie_success = False
+            try:
+                from flask import g
+                if not hasattr(g, 'pass_cookie_data'):
+                    g.pass_cookie_data = []
+                g.pass_cookie_data.append({
+                    'pass_id': pass_obj.pass_id,
+                    'user_email': user_email,
+                    'created_at': pass_obj.created_at
+                })
+                cookie_success = True
+                print(f"[패스 저장] 쿠키 백업 데이터 준비 완료")
+            except Exception as cookie_error:
+                print(f"[패스 저장] 쿠키 백업 준비 실패: {cookie_error}")
+            
+            return {
+                'success': True,
+                'pass_id': pass_obj.pass_id,
+                'message': '패스가 성공적으로 저장되었습니다.',
+                'file_saved': file_success,
+                'datastore_saved': datastore_success,
+                'session_saved': session_success,
+                'cookie_prepared': cookie_success
+            }
+        else:
+            print(f"[패스 저장] 실패: {pass_obj.pass_id} (사용자: {user_email})")
+            return {
+                'success': False,
+                'pass_id': pass_obj.pass_id,
+                'message': '패스 저장에 실패했습니다.'
+            }
+    except Exception as e:
+        print(f"[패스 저장] 오류: {e} (패스: {pass_obj.pass_id if pass_obj else 'unknown'}, 사용자: {user_email})")
+        return {
+            'success': False,
+            'pass_id': pass_obj.pass_id if pass_obj else 'unknown',
+            'message': f'패스 저장 중 오류가 발생했습니다: {str(e)}'
+        }
+
+def load_pass_from_file(pass_id: str) -> Optional[Pass]:
+    """파일에서 패스 로드 (프로덕션 환경에서는 Datastore와 세션에서도 조회)"""
+    try:
+        print(f"[패스 로드] 패스 ID: {pass_id}")
+        
+        # 프로덕션 환경 감지
+        is_production = (
+            os.environ.get('GAE_ENV', '').startswith('standard') or 
+            os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+            'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+        )
+        
+        print(f"[패스 로드] 프로덕션 환경: {is_production}")
+        
+        # 프로덕션 환경에서는 먼저 Datastore에서 찾기
+        if is_production:
+            try:
+                from src.datastore_service import load_pass_from_datastore
+                print(f"[패스 로드] Datastore 조회 시작: {pass_id}")
+                datastore_pass = load_pass_from_datastore(pass_id)
+                if datastore_pass:
+                    print(f"[패스 로드] Datastore에서 패스 발견: {pass_id}")
+                    return datastore_pass
+                print(f"[패스 로드] Datastore에서 패스를 찾을 수 없음: {pass_id}")
+            except Exception as datastore_error:
+                print(f"[패스 로드] Datastore 조회 실패: {datastore_error}")
+                import traceback
+                print(f"[패스 로드] Datastore 오류 세부사항: {traceback.format_exc()}")
+        
+        # 프로덕션 환경에서는 세션에서도 찾기 (백업)
+        if is_production:
+            try:
+                from flask import session
+                session_passes = session.get('saved_passes', [])
+                print(f"[패스 로드] 세션에서 {len(session_passes)}개 패스 확인 중...")
+                
+                for pass_data in session_passes:
+                    if pass_data.get('pass_id') == pass_id:
+                        print(f"[패스 로드] 세션에서 패스 발견: {pass_id}")
+                        return _create_pass_from_data(pass_data)
+                        
+                print(f"[패스 로드] 세션에서 패스를 찾을 수 없음: {pass_id}")
+                        
+            except Exception as session_error:
+                print(f"[패스 로드] 세션 접근 오류: {session_error}")
+        
+        # 파일 시스템에서 찾기
         filename = f"pass_{pass_id}.json"
         saved_passes_dir = os.path.join(os.path.dirname(__file__), '..', 'storage', 'saved_passes')
         filepath = os.path.join(saved_passes_dir, filename)
         
+        print(f"[패스 로드] 파일 경로: {filepath}")
+        print(f"[패스 로드] 파일 존재: {os.path.exists(filepath)}")
+        
         if not os.path.exists(filepath):
+            print(f"[패스 로드] 파일을 찾을 수 없음: {pass_id}")
             return None
         
         with open(filepath, 'r', encoding='utf-8') as f:
             pass_data = json.load(f)
         
+        print(f"[패스 로드] 파일에서 패스 발견: {pass_id}")
+        return _create_pass_from_data(pass_data)
+        
+    except Exception as e:
+        print(f"[패스 로드] 오류: {e} (패스 ID: {pass_id})")
+        import traceback
+        traceback.print_exc()
+        return None
+
+def _create_pass_from_data(pass_data: dict) -> Optional[Pass]:
+    """패스 데이터 딕셔너리에서 Pass 객체 생성"""
+    try:
         # 호환성을 위한 데이터 구조 확인
         if 'stores' not in pass_data:
-            # 이전 형식의 파일은 스킵
-            print(f"패스 로드 중 오류: 이전 형식의 패스 파일 스킵 - {pass_id}")
+            print(f"패스 생성 오류: stores 필드 없음")
             return None
             
         if 'benefits' not in pass_data:
-            print(f"패스 로드 중 오류: benefits 필드 없음 - {pass_id}")
+            print(f"패스 생성 오류: benefits 필드 없음")
             return None
         
         # PassType 호환성 확인
@@ -239,7 +414,7 @@ def load_pass_from_file(pass_id: str) -> Optional[Pass]:
             pass_type = PassType(pass_type_str)
         except ValueError:
             # 유효하지 않은 PassType은 light로 변환
-            print(f"패스 로드 중 경고: 유효하지 않은 패스 타입 '{pass_type_str}' -> 'light'로 변환")
+            print(f"패스 생성 경고: 유효하지 않은 패스 타입 '{pass_type_str}' -> 'light'로 변환")
             pass_type = PassType.LIGHT
         
         # Theme 호환성 확인  
@@ -247,19 +422,37 @@ def load_pass_from_file(pass_id: str) -> Optional[Pass]:
         try:
             theme = Theme(theme_str)
         except ValueError:
-            print(f"패스 로드 중 경고: 유효하지 않은 테마 '{theme_str}' -> '음식'으로 변환")
+            print(f"패스 생성 경고: 유효하지 않은 테마 '{theme_str}' -> '음식'으로 변환")
             theme = Theme.FOOD
         
         # 데이터 복원
-        stores = [Store(**store_data) for store_data in pass_data['stores']]
+        stores = []
+        for store_data in pass_data['stores']:
+            # Store 모델에 정의된 필드만 추출
+            valid_store_fields = {
+                'name', 'category', 'address', 'phone', 'description', 
+                'rating', 'price_range', 'opening_hours', 'menu_highlights',
+                'location', 'latitude', 'longitude', 'image_url'
+            }
+            filtered_store_data = {k: v for k, v in store_data.items() if k in valid_store_fields}
+            stores.append(Store(**filtered_store_data))
+            
         # 혜택 코드 누락 시 부여
         benefits = []
         for benefit_data in pass_data['benefits']:
-            b = Benefit(**benefit_data)
+            # Benefit 모델에 정의된 필드만 추출
+            valid_benefit_fields = {
+                'store_name', 'benefit_type', 'description', 
+                'discount_rate', 'valid_until', 'terms', 'redemption_code'
+            }
+            filtered_benefit_data = {k: v for k, v in benefit_data.items() if k in valid_benefit_fields}
+            
+            b = Benefit(**filtered_benefit_data)
             if not getattr(b, 'redemption_code', None):
                 source = f"{b.store_name}|{b.benefit_type}|{b.description}"
                 b.redemption_code = _stable_redemption_code(source)
             benefits.append(b)
+            
         user_prefs = UserPrefs(**pass_data['user_prefs'])
 
         pass_obj = Pass(
@@ -272,10 +465,13 @@ def load_pass_from_file(pass_id: str) -> Optional[Pass]:
             user_prefs=user_prefs
         )
         
+        print(f"[패스 생성] 패스 객체 생성 완료: {pass_obj.pass_id}")
         return pass_obj
         
     except Exception as e:
-        print(f"패스 로드 중 오류: {e}")
+        print(f"[패스 생성] 오류: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def get_all_passes() -> List[Dict[str, Any]]:
@@ -284,21 +480,274 @@ def get_all_passes() -> List[Dict[str, Any]]:
         passes = []
         saved_passes_dir = os.path.join(os.path.dirname(__file__), '..', 'storage', 'saved_passes')
         
-        if not os.path.exists(saved_passes_dir):
-            return passes
+        # 프로덕션 환경 감지
+        is_production = (
+            os.environ.get('GAE_ENV', '').startswith('standard') or 
+            os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+            'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+        )
         
-        for filename in os.listdir(saved_passes_dir):
+        print(f"[패스 조회] 프로덕션 환경: {is_production}")
+        print(f"[패스 조회] 저장 디렉토리: {saved_passes_dir}")
+        print(f"[패스 조회] 디렉토리 존재: {os.path.exists(saved_passes_dir)}")
+        
+        # 프로덕션 환경에서는 Datastore에서도 패스를 가져옴 (영구 저장소)
+        if is_production:
+            try:
+                from src.datastore_service import get_user_passes_from_datastore
+                from flask import session
+                user_email = session.get('user_email') or 'demo@jemulpogo.com'
+                print(f"[패스 조회] Datastore 조회 시작, 사용자: {user_email}")
+                datastore_passes = get_user_passes_from_datastore(user_email)
+                print(f"[패스 조회] Datastore에서 {len(datastore_passes)}개 패스 발견")
+                passes.extend(datastore_passes)
+            except Exception as datastore_error:
+                print(f"[패스 조회] Datastore 조회 오류: {datastore_error}")
+                import traceback
+                print(f"[패스 조회] Datastore 오류 세부사항: {traceback.format_exc()}")
+        
+        # 프로덕션 환경에서는 세션에서도 패스를 가져옴 (백업)
+        if is_production:
+            try:
+                from flask import session
+                session_passes = session.get('saved_passes', [])
+                print(f"[패스 조회] 세션에서 {len(session_passes)}개 패스 발견")
+                
+                for pass_data in session_passes:
+                    try:
+                        # 세션에서 가져온 패스 데이터를 처리
+                        theme_names = {
+                            'food': '맛집', 'culture': '문화', 'shopping': '쇼핑',
+                            'entertainment': '오락', 'seafood': '해산물', 'cafe': '카페',
+                            'traditional': '전통', 'retro': '레트로', 'quiet': '조용함'
+                        }
+                        
+                        pass_type_names = {
+                            'light': '라이트', 'premium': '프리미엄', 'citizen': '시민'
+                        }
+                        
+                        theme_name = theme_names.get(pass_data.get('theme', '').lower(), pass_data.get('theme', '테마'))
+                        pass_type_name = pass_type_names.get(pass_data.get('pass_type', '').lower(), pass_data.get('pass_type', '타입'))
+                        pass_name = f"{theme_name} {pass_type_name} 패스"
+                        
+                        # 유효기간 계산
+                        created_at = pass_data.get('created_at', datetime.now().isoformat())
+                        if isinstance(created_at, str):
+                            created_date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                        else:
+                            created_date = created_at
+                            
+                        valid_until = created_date + timedelta(days=30)
+                        
+                        # 패스 상태 결정
+                        now = datetime.now(timezone.utc) if created_date.tzinfo else datetime.now()
+                        status = 'expired' if now > valid_until else 'active'
+                        
+                        # 패스 가격 계산
+                        pass_type_prices = {
+                            'light': 7900, 'premium': 14900, 'citizen': 6900
+                        }
+                        total_price = pass_type_prices.get(pass_data.get('pass_type', '').lower(), 7900)
+                        
+                        stores = pass_data.get('stores', [])
+                        benefits = pass_data.get('benefits', [])
+                        
+                        passes.append({
+                            'pass_id': pass_data.get('pass_id'),
+                            'name': pass_name,
+                            'pass_type': pass_type_name,
+                            'theme': theme_name,
+                            'created_at': created_at,
+                            'valid_until': valid_until.isoformat(),
+                            'status': status,
+                            'total_places': len(stores),
+                            'visited_places': 0,
+                            'total_price': total_price,
+                            'store_count': len(stores),
+                            'benefits_count': len(benefits)
+                        })
+                        
+                        print(f"[패스 조회] 세션에서 패스 추가: {pass_data.get('pass_id')}")
+                        
+                    except Exception as pass_error:
+                        print(f"[패스 조회] 세션 패스 처리 오류: {pass_error}")
+                        continue
+                        
+            except Exception as session_error:
+                print(f"[패스 조회] 세션 접근 오류: {session_error}")
+        
+        # 쿠키에서도 패스를 가져옴 (로그아웃 후에도 유지되는 백업)
+        try:
+            from flask import request
+            cookie_passes = request.cookies.get('user_passes')
+            if cookie_passes:
+                import json
+                cookie_pass_ids = json.loads(cookie_passes)
+                print(f"[패스 조회] 쿠키에서 {len(cookie_pass_ids)}개 패스 ID 발견")
+                
+                for pass_id in cookie_pass_ids:
+                    try:
+                        # 파일에서 패스 로드 시도
+                        pass_obj = load_pass_from_file(pass_id)
+                        if pass_obj:
+                            # 패스 이름 생성 (테마와 타입 기반)
+                            theme_names = {
+                                'food': '맛집', 'culture': '문화', 'shopping': '쇼핑',
+                                'entertainment': '오락', 'seafood': '해산물', 'cafe': '카페',
+                                'traditional': '전통', 'retro': '레트로', 'quiet': '조용함'
+                            }
+                            
+                            pass_type_names = {
+                                'light': '라이트', 'premium': '프리미엄', 'citizen': '시민'
+                            }
+                            
+                            theme_name = theme_names.get(pass_obj.theme.value, pass_obj.theme.value)
+                            pass_type_name = pass_type_names.get(pass_obj.pass_type.value, pass_obj.pass_type.value)
+                            pass_name = f"{theme_name} {pass_type_name} 패스"
+                            
+                            # 유효기간 계산
+                            try:
+                                if isinstance(pass_obj.created_at, str):
+                                    created_date = datetime.fromisoformat(pass_obj.created_at.replace('Z', '+00:00'))
+                                else:
+                                    created_date = pass_obj.created_at
+                                
+                                valid_until = created_date + timedelta(days=30)
+                                valid_until_str = valid_until.isoformat()
+                                
+                                # 패스 상태 결정
+                                now = datetime.now(timezone.utc) if created_date.tzinfo else datetime.now()
+                                status = 'expired' if now > valid_until else 'active'
+                            except Exception as date_error:
+                                print(f"쿠키 패스 날짜 처리 오류: {date_error}")
+                                valid_until_str = pass_obj.created_at
+                                status = 'active'
+                            
+                            # 패스 가격 계산
+                            pass_type_prices = {
+                                'light': 7900, 'premium': 14900, 'citizen': 6900
+                            }
+                            total_price = pass_type_prices.get(pass_obj.pass_type.value, 7900)
+                            
+                            passes.append({
+                                'pass_id': pass_obj.pass_id,
+                                'name': pass_name,
+                                'pass_type': pass_type_name,
+                                'theme': theme_name,
+                                'created_at': pass_obj.created_at,
+                                'valid_until': valid_until_str,
+                                'status': status,
+                                'total_places': len(pass_obj.stores),
+                                'visited_places': 0,
+                                'total_price': total_price,
+                                'store_count': len(pass_obj.stores),
+                                'benefits_count': len(pass_obj.benefits),
+                                'source': 'cookie'  # 출처 표시
+                            })
+                            
+                            print(f"[패스 조회] 쿠키에서 패스 추가: {pass_obj.pass_id}")
+                        else:
+                            print(f"[패스 조회] 쿠키 패스 로드 실패: {pass_id}")
+                            
+                    except Exception as pass_error:
+                        print(f"[패스 조회] 쿠키 패스 처리 오류: {pass_error}")
+                        continue
+        except Exception as cookie_error:
+            print(f"[패스 조회] 쿠키 접근 오류: {cookie_error}")
+        
+        # 파일 시스템에서도 패스를 가져옴 (로컬 또는 배포 시 포함된 파일들)
+        if os.path.exists(saved_passes_dir):
+            try:
+                files = os.listdir(saved_passes_dir)
+                print(f"[패스 조회] 디렉토리 내 파일 수: {len(files)}")
+                print(f"[패스 조회] 파일 목록: {files}")
+            except Exception as list_error:
+                print(f"[패스 조회] 파일 목록 조회 실패: {list_error}")
+                files = []
+        else:
+            files = []
+        
+        for filename in files:
             if filename.endswith('.json') and filename.startswith('pass_'):
                 pass_id = filename[5:-5]  # 'pass_'와 '.json' 제거
                 pass_obj = load_pass_from_file(pass_id)
                 if pass_obj:
+                    # 패스 이름 생성 (테마와 타입 기반)
+                    theme_names = {
+                        'food': '맛집',
+                        'culture': '문화',
+                        'shopping': '쇼핑',
+                        'entertainment': '오락',
+                        'seafood': '해산물',
+                        'cafe': '카페',
+                        'traditional': '전통',
+                        'retro': '레트로',
+                        'quiet': '조용함'
+                    }
+                    
+                    pass_type_names = {
+                        'light': '라이트',
+                        'premium': '프리미엄',
+                        'citizen': '시민'
+                    }
+                    
+                    theme_name = theme_names.get(pass_obj.theme.value, pass_obj.theme.value)
+                    pass_type_name = pass_type_names.get(pass_obj.pass_type.value, pass_obj.pass_type.value)
+                    pass_name = f"{theme_name} {pass_type_name} 패스"
+                    
+                    # 유효기간 계산 (생성일로부터 30일)
+                    try:
+                        if isinstance(pass_obj.created_at, str):
+                            created_date = datetime.fromisoformat(pass_obj.created_at.replace('Z', '+00:00'))
+                        else:
+                            created_date = pass_obj.created_at
+                        
+                        valid_until = created_date + timedelta(days=30)
+                        valid_until_str = valid_until.isoformat()
+                        
+                        # 패스 상태 결정
+                        now = datetime.now(timezone.utc) if created_date.tzinfo else datetime.now()
+                        if now > valid_until:
+                            status = 'expired'
+                        else:
+                            status = 'active'
+                    except Exception as date_error:
+                        print(f"날짜 처리 오류: {date_error}")
+                        valid_until_str = pass_obj.created_at
+                        status = 'active'
+                    
+                    # 패스 가격 계산
+                    pass_type_prices = {
+                        'light': 7900,
+                        'premium': 14900,
+                        'citizen': 6900
+                    }
+                    total_price = pass_type_prices.get(pass_obj.pass_type.value, 7900)
+                    
                     passes.append({
                         'pass_id': pass_obj.pass_id,
-                        'pass_type': pass_obj.pass_type.value,
-                        'theme': pass_obj.theme.value,
+                        'name': pass_name,
+                        'pass_type': pass_type_name,
+                        'theme': theme_name,
                         'created_at': pass_obj.created_at,
-                        'store_count': len(pass_obj.stores)
+                        'valid_until': valid_until_str,
+                        'status': status,
+                        'total_places': len(pass_obj.stores),
+                        'visited_places': 0,  # TODO: 실제 방문 기록 추적 시 업데이트
+                        'total_price': total_price,
+                        'store_count': len(pass_obj.stores),
+                        'benefits_count': len(pass_obj.benefits)
                     })
+        
+        # 패스 ID 기준으로 중복 제거 (세션에서 가져온 패스가 우선)
+        unique_passes = {}
+        for pass_info in passes:
+            pass_id = pass_info.get('pass_id')
+            if pass_id and pass_id not in unique_passes:
+                unique_passes[pass_id] = pass_info
+        
+        passes = list(unique_passes.values())
+        print(f"[패스 조회] 중복 제거 후 총 {len(passes)}개 패스")
         
         # 생성일자순 정렬 (최신순)
         passes.sort(key=lambda x: x['created_at'], reverse=True)

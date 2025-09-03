@@ -14,11 +14,28 @@ from chatbot import get_chatbot, clear_chatbot_session  # 채팅봇 모듈 임�
 def login_required(f):
     """로그인이 필요한 페이지에 적용할 데코레이터"""
     def decorated_function(*args, **kwargs):
-        # 세션 검증 강화
-        if 'user_logged_in' not in session or not session.get('user_logged_in'):
-            return redirect(url_for('auth_page'))
-        if 'user_email' not in session or not session.get('user_email'):
-            return redirect(url_for('auth_page'))
+        # 프로덕션 환경에서 세션 검증 완화
+        is_production = (
+            os.environ.get('GAE_ENV', '').startswith('standard') or 
+            os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+            'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+        )
+        
+        if is_production:
+            # 프로덕션 환경에서는 세션 검증을 완화하고 쿠키도 확인
+            user_logged_in = session.get('user_logged_in') or request.cookies.get('user_logged_in') == 'true'
+            user_email = session.get('user_email') or request.cookies.get('user_email')
+            
+            if not user_logged_in or not user_email:
+                print(f"[로그인 필요] 세션: {dict(session)}, 쿠키: {dict(request.cookies)}")
+                return redirect(url_for('auth_page'))
+        else:
+            # 개발 환경에서는 기존 검증 방식 유지
+            if 'user_logged_in' not in session or not session.get('user_logged_in'):
+                return redirect(url_for('auth_page'))
+            if 'user_email' not in session or not session.get('user_email'):
+                return redirect(url_for('auth_page'))
+        
         return f(*args, **kwargs)
     decorated_function.__name__ = f.__name__
     return decorated_function
@@ -184,9 +201,15 @@ def register_routes(app):
                     'session_id': request.cookies.get('session', 'no-session')
                 })
                 
-                # 추가 쿠키 설정
+                # 프로덕션 환경에서 세션 백업용 쿠키 설정
                 response.set_cookie('user_logged_in', 'true', 
-                                  secure=False, 
+                                  max_age=60*60*24*7,  # 7일 유지
+                                  secure=False,  # HTTP에서도 작동하도록 설정
+                                  httponly=False,
+                                  samesite='Lax')
+                response.set_cookie('user_email', email,
+                                  max_age=60*60*24*7,  # 7일 유지  
+                                  secure=False,
                                   httponly=False,
                                   samesite='Lax')
                 
@@ -223,11 +246,25 @@ def register_routes(app):
             session['user_email'] = email
             session.permanent = True  # 세션을 영구적으로 설정
             
-            return jsonify({
+            response = jsonify({
                 'success': True, 
                 'message': '회원가입 성공!',
                 'redirect_url': '/main'  # 리다이렉트 URL 추가
             })
+            
+            # 프로덕션 환경에서 세션 백업용 쿠키 설정
+            response.set_cookie('user_logged_in', 'true', 
+                              max_age=60*60*24*7,  # 7일 유지
+                              secure=False,
+                              httponly=False,
+                              samesite='Lax')
+            response.set_cookie('user_email', email,
+                              max_age=60*60*24*7,  # 7일 유지  
+                              secure=False,
+                              httponly=False,
+                              samesite='Lax')
+            
+            return response
             
         except Exception as e:
             return jsonify({'error': f'회원가입 중 오류가 발생했습니다: {str(e)}'}), 500
@@ -236,25 +273,54 @@ def register_routes(app):
     def logout_api():
         """로그아웃 API"""
         session.clear()
-        return jsonify({'success': True, 'message': '로그아웃되었습니다.'})
+        response = jsonify({'success': True, 'message': '로그아웃되었습니다.'})
+        
+        # 쿠키도 제거
+        response.set_cookie('user_logged_in', '', expires=0)
+        response.set_cookie('user_email', '', expires=0)
+        
+        return response
 
     @app.route('/api/session-check', methods=['GET'])
     def session_check_api():
         """세션 상태 확인 API"""
-        user_logged_in = session.get('user_logged_in', False)
-        user_email = session.get('user_email')
+        # 세션과 쿠키 모두 확인
+        session_logged_in = session.get('user_logged_in', False)
+        session_email = session.get('user_email')
+        
+        cookie_logged_in = request.cookies.get('user_logged_in') == 'true'
+        cookie_email = request.cookies.get('user_email')
+        
+        # 세션 또는 쿠키 중 하나라도 유효하면 로그인 상태로 인정
+        user_logged_in = session_logged_in or cookie_logged_in
+        user_email = session_email or cookie_email
+        
         is_logged_in = user_logged_in and user_email
         
-        print(f"[세션 확인] user_logged_in: {user_logged_in}")
-        print(f"[세션 확인] user_email: {user_email}")
+        print(f"[세션 확인] 세션 로그인: {session_logged_in}, 쿠키 로그인: {cookie_logged_in}")
+        print(f"[세션 확인] 세션 이메일: {session_email}, 쿠키 이메일: {cookie_email}")
+        print(f"[세션 확인] 최종 로그인 상태: {is_logged_in}")
         print(f"[세션 확인] 전체 세션: {dict(session)}")
-        print(f"[세션 확인] 쿠키: {dict(request.cookies)}")
+        print(f"[세션 확인] 전체 쿠키: {dict(request.cookies)}")
+        
+        # 쿠키에서 로그인 정보가 확인되었지만 세션에 없다면 세션에 복원
+        if cookie_logged_in and cookie_email and not session_logged_in:
+            print("[세션 확인] 쿠키에서 세션 복원")
+            session['user_logged_in'] = True
+            session['user_email'] = cookie_email
+            session.permanent = True
         
         return jsonify({
             'logged_in': bool(is_logged_in),
             'user_email': user_email if is_logged_in else None,
             'session_data': dict(session),
-            'cookies': dict(request.cookies)
+            'cookies': dict(request.cookies),
+            'debug_info': {
+                'session_logged_in': session_logged_in,
+                'cookie_logged_in': cookie_logged_in,
+                'session_email': session_email,
+                'cookie_email': cookie_email
+            }
         })
 
     # 데이터 API
@@ -409,7 +475,10 @@ def register_routes(app):
     def complete_chat():
         """채팅 완료 후 패스 생성"""
         try:
+            print(f"[채팅봇 API] 패스 생성 요청 수신 - 사용자: {session.get('user_email')}")
+            
             data = request.get_json()
+            print(f"[채팅봇 API] 요청 데이터: {data}")
             
             if not data:
                 return jsonify({'error': '요청 데이터가 없습니다.'}), 400
@@ -417,20 +486,27 @@ def register_routes(app):
             session_id = data.get('session_id')
             pass_type_str = data.get('pass_type', 'light')
             
+            print(f"[채팅봇 API] 세션 ID: {session_id}, 패스 타입: {pass_type_str}")
+            
             if not session_id:
                 return jsonify({'error': '세션 ID가 필요합니다.'}), 400
             
             # 채팅봇 인스턴스 가져오기
+            print(f"[채팅봇 API] 세션 ID로 채팅봇 인스턴스 가져오기: {session_id}")
             chatbot = get_chatbot(session_id)
             
             # 대화 요약과 기본 정보 가져오기
             basic_prefs = chatbot.get_basic_preferences()
             conversation_summary = chatbot.get_conversation_summary()
             
+            print(f"[채팅봇 API] 기본 설정: {basic_prefs}")
+            print(f"[채팅봇 API] 대화 요약 길이: {len(conversation_summary) if conversation_summary else 0}")
+            
             if not conversation_summary:
                 return jsonify({'error': '대화가 완료되지 않았습니다.'}), 400
             
             # 패스 생성기 가져오기
+            print("[채팅봇 API] 패스 생성기 가져오기")
             from pass_generator import get_pass_generator
             pass_generator = get_pass_generator()
             
@@ -599,16 +675,60 @@ def register_routes(app):
                 }
             }
             
+            # 생성된 패스를 저장
+            try:
+                from services import save_pass
+                user_email = session.get('user_email', 'demo@jemulpogo.com')
+                save_result = save_pass(generated_pass, user_email)
+                print(f"[채팅봇 API] 패스 저장 결과: {save_result}")
+            except Exception as save_error:
+                print(f"[채팅봇 API] 패스 저장 실패: {save_error}")
+                # 패스 저장 실패해도 결과는 반환 (사용자에게 패스는 보여줌)
+            
             # 채팅 세션 정리
             clear_chatbot_session(session_id)
             
-            return jsonify(result)
+            # 응답 생성 및 쿠키 설정
+            response = jsonify(result)
+            
+            # 쿠키에 패스 ID 백업 저장
+            try:
+                import json
+                # 기존 쿠키에서 패스 ID 목록 가져오기
+                existing_passes = request.cookies.get('user_passes', '[]')
+                pass_ids = json.loads(existing_passes) if existing_passes else []
+                
+                # 새 패스 ID 추가 (중복 제거)
+                if generated_pass.pass_id not in pass_ids:
+                    pass_ids.append(generated_pass.pass_id)
+                    
+                # 최대 50개까지만 유지
+                if len(pass_ids) > 50:
+                    pass_ids = pass_ids[-50:]
+                
+                # 쿠키 설정 (30일 유지)
+                response.set_cookie('user_passes', json.dumps(pass_ids),
+                                  max_age=60*60*24*30,  # 30일
+                                  secure=False,
+                                  httponly=False,
+                                  samesite='Lax')
+                
+                print(f"[채팅봇 API] 쿠키에 패스 ID 저장: {generated_pass.pass_id}")
+                print(f"[채팅봇 API] 쿠키 내 총 패스 수: {len(pass_ids)}")
+                
+            except Exception as cookie_error:
+                print(f"[채팅봇 API] 쿠키 설정 실패: {cookie_error}")
+            
+            return response
             
         except Exception as e:
+            import traceback
             print(f"[채팅봇 API] 패스 생성 실패: {e}")
+            print(f"[채팅봇 API] 상세 오류: {traceback.format_exc()}")
             return jsonify({
                 'error': f'패스 생성 중 오류가 발생했습니다: {str(e)}',
-                'success': False
+                'success': False,
+                'details': str(e)
             }), 500
 
     @app.route('/api/chat/reset', methods=['POST'])
@@ -846,7 +966,38 @@ def register_routes(app):
                 }
             }
             
-            return jsonify(result)
+            # 응답 생성 및 쿠키 설정
+            response = jsonify(result)
+            
+            # 쿠키에 패스 ID 백업 저장
+            try:
+                import json
+                # 기존 쿠키에서 패스 ID 목록 가져오기
+                existing_passes = request.cookies.get('user_passes', '[]')
+                pass_ids = json.loads(existing_passes) if existing_passes else []
+                
+                # 새 패스 ID 추가 (중복 제거)
+                if generated_pass.pass_id not in pass_ids:
+                    pass_ids.append(generated_pass.pass_id)
+                    
+                # 최대 50개까지만 유지 (너무 많아지지 않도록)
+                if len(pass_ids) > 50:
+                    pass_ids = pass_ids[-50:]
+                
+                # 쿠키 설정 (30일 유지)
+                response.set_cookie('user_passes', json.dumps(pass_ids),
+                                  max_age=60*60*24*30,  # 30일
+                                  secure=False,  # HTTP에서도 작동
+                                  httponly=False,  # JavaScript에서도 접근 가능
+                                  samesite='Lax')
+                
+                print(f"[패스 생성] 쿠키에 패스 ID 저장: {generated_pass.pass_id}")
+                print(f"[패스 생성] 쿠키 내 총 패스 수: {len(pass_ids)}")
+                
+            except Exception as cookie_error:
+                print(f"[패스 생성] 쿠키 설정 실패: {cookie_error}")
+            
+            return response
             
         except ValueError as e:
             # AI API 관련 에러는 400 Bad Request로 처리
@@ -907,20 +1058,55 @@ def register_routes(app):
     def get_user_passes_api():
         """사용자의 모든 패스 조회"""
         try:
-            # 세션에서 사용자 이메일 가져오기
-            user_email = session.get('user_email', 'demo@jemulpogo.com')
+            # 프로덕션 환경 감지
+            is_production = (
+                os.environ.get('GAE_ENV', '').startswith('standard') or 
+                os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+                'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+            )
+            
+            # 세션에서 사용자 이메일 가져오기 (쿠키도 확인)
+            session_email = session.get('user_email')
+            cookie_email = request.cookies.get('user_email')
+            
+            user_email = session_email or cookie_email or 'demo@jemulpogo.com'
+            
+            print(f"[패스 조회 API] 프로덕션: {is_production}, 세션 이메일: {session_email}, 쿠키 이메일: {cookie_email}")
+            print(f"[패스 조회 API] 사용자 이메일: {user_email}")
+            
+            # 쿠키에서 로그인 정보가 확인되었지만 세션에 없다면 세션에 복원
+            if is_production and cookie_email and not session_email:
+                print("[패스 조회 API] 쿠키에서 세션 복원 중")
+                session['user_logged_in'] = True
+                session['user_email'] = cookie_email
+                session.permanent = True
+                user_email = cookie_email
             
             user_passes = get_all_passes()
+            
+            print(f"[패스 조회 API] {len(user_passes)}개 패스 조회됨")
             
             return jsonify({
                 'success': True,
                 'passes': user_passes,
-                'count': len(user_passes)
+                'count': len(user_passes),
+                'debug_info': {
+                    'user_email': user_email,
+                    'session_email': session_email,
+                    'cookie_email': cookie_email,
+                    'is_production': is_production,
+                    'storage_types': list(set([p.get('source', 'unknown') for p in user_passes]))
+                }
             })
             
         except Exception as e:
             print(f"[오류] 사용자 패스 조회 중 에러: {e}")
-            return jsonify({'error': f'패스 조회 중 오류가 발생했습니다: {str(e)}'}), 500
+            import traceback
+            traceback.print_exc()
+            return jsonify({
+                'error': f'패스 조회 중 오류가 발생했습니다: {str(e)}',
+                'success': False
+            }), 500
 
     # 혜택 특수코드 검증/사용 API
     @app.route('/api/benefits/validate', methods=['POST'])

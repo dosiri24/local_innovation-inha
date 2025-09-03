@@ -16,7 +16,7 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #16C2EE 0%, #0FA3D1 100%);
             min-height: 100vh;
             color: #333;
             line-height: 1.6;
@@ -80,8 +80,8 @@
         .form-group input[type="text"]:focus, 
         .form-group textarea:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #16C2EE;
+            box-shadow: 0 0 0 3px rgba(22, 194, 238, 0.1);
         }
 
         .themes-container {
@@ -107,10 +107,10 @@
         }
 
         .theme-tag.selected {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #16C2EE, #0FA3D1);
             color: white;
-            border-color: #5a67d8;
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            border-color: #0D95BD;
+            box-shadow: 0 4px 12px rgba(22, 194, 238, 0.3);
         }
 
         .pass-types {
@@ -131,19 +131,19 @@
         }
 
         .pass-type:hover {
-            border-color: #667eea;
+            border-color: #16C2EE;
             transform: translateY(-3px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
         }
 
         .pass-type.selected {
-            border-color: #667eea;
-            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            border-color: #16C2EE;
+            background: linear-gradient(135deg, #E8F8FD, #D1F2FC);
+            box-shadow: 0 10px 30px rgba(22, 194, 238, 0.2);
         }
 
         .pass-type h3 {
-            color: #667eea;
+            color: #16C2EE;
             margin-bottom: 12px;
             font-size: 1.3em;
         }
@@ -163,7 +163,7 @@
 
         .generate-btn {
             width: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #16C2EE 0%, #0FA3D1 100%);
             color: white;
             border: none;
             padding: 18px 30px;
@@ -179,7 +179,7 @@
 
         .generate-btn:hover {
             transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 25px rgba(22, 194, 238, 0.3);
         }
 
         .generate-btn:disabled {
@@ -197,7 +197,7 @@
 
         .spinner {
             border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #16C2EE;
             border-radius: 50%;
             width: 50px;
             height: 50px;
@@ -212,7 +212,7 @@
 
         .loading-text {
             font-size: 18px;
-            color: #667eea;
+            color: #16C2EE;
             font-weight: 600;
         }
 
@@ -221,7 +221,7 @@
         }
 
         .result-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #16C2EE 0%, #0FA3D1 100%);
             color: white;
             padding: 30px;
             border-radius: 15px;
@@ -242,11 +242,11 @@
         }
 
         .stat-card {
-            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
+            background: linear-gradient(135deg, #E8F8FD, #D1F2FC);
             padding: 20px;
             border-radius: 12px;
             text-align: center;
-            border: 2px solid #e1e5ff;
+            border: 2px solid #C2E8F5;
             transition: transform 0.3s ease;
         }
 
@@ -257,7 +257,7 @@
         .stat-value {
             font-size: 1.6em;
             font-weight: bold;
-            color: #667eea;
+            color: #16C2EE;
             margin-bottom: 5px;
         }
 
@@ -279,8 +279,8 @@
         }
 
         .benefit-item {
-            background: linear-gradient(135deg, #ffffff, #f8f9ff);
-            border-left: 5px solid #667eea;
+            background: linear-gradient(135deg, #ffffff, #E8F8FD);
+            border-left: 5px solid #16C2EE;
             padding: 25px;
             margin-bottom: 20px;
             border-radius: 0 12px 12px 0;
@@ -307,7 +307,7 @@
         }
 
         .benefit-value {
-            color: #667eea;
+            color: #16C2EE;
             font-weight: bold;
             margin-bottom: 10px;
             font-size: 1.1em;
@@ -318,7 +318,7 @@
             font-style: italic;
             font-size: 0.95em;
             padding: 10px;
-            background: rgba(102, 126, 234, 0.05);
+            background: rgba(22, 194, 238, 0.05);
             border-radius: 8px;
         }
 
@@ -352,6 +352,15 @@
             box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
         }
 
+        /* 추가: 내 패스 보기 버튼 스타일 */
+        .back-btn[style*="background: linear-gradient(45deg, #667eea, #764ba2)"] {
+            background: linear-gradient(45deg, #16C2EE, #0FA3D1) !important;
+        }
+
+        .back-btn[style*="background: linear-gradient(45deg, #16C2EE, #0FA3D1)"]:hover {
+            box-shadow: 0 5px 15px rgba(22, 194, 238, 0.3);
+        }
+
         /* 지도 관련 스타일 추가 */
         .map-container {
             background: white;
@@ -362,7 +371,7 @@
         }
 
         .map-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #16C2EE 0%, #0FA3D1 100%);
             color: white;
             padding: 1.5rem;
             text-align: center;
@@ -399,7 +408,7 @@
             width: 40px;
             height: 40px;
             border: 4px solid #e2e8f0;
-            border-top: 4px solid #667eea;
+            border-top: 4px solid #16C2EE;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             margin-bottom: 1rem;
@@ -433,11 +442,11 @@
 
         .map-filter-btn:hover,
         .map-filter-btn.active {
-            background: #667eea;
-            border-color: #667eea;
+            background: #16C2EE;
+            border-color: #16C2EE;
             color: white;
             transform: translateY(-1px);
-            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 2px 10px rgba(22, 194, 238, 0.3);
         }
 
         .route-buttons {
@@ -469,7 +478,7 @@
         }
 
         .route-btn.walking {
-            background: #2563eb;
+            background: #16C2EE;
         }
 
         .route-btn.hide {
@@ -524,7 +533,7 @@
         }
 
         .bot-message .message-avatar {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #16C2EE, #0FA3D1);
             color: white;
         }
 
@@ -566,7 +575,7 @@
         }
 
         .user-message .message-text {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #16C2EE, #0FA3D1);
             color: white;
         }
 
@@ -614,7 +623,7 @@
         }
 
         .chat-input-container input:focus {
-            border-color: #667eea;
+            border-color: #16C2EE;
         }
 
         .chat-input-container input:disabled {
@@ -623,7 +632,7 @@
         }
 
         .chat-input-container button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #16C2EE, #0FA3D1);
             color: white;
             border: none;
             border-radius: 25px;
@@ -636,7 +645,7 @@
 
         .chat-input-container button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 5px 15px rgba(22, 194, 238, 0.3);
         }
 
         .chat-input-container button:disabled {
@@ -658,8 +667,8 @@
 
         /* 대화 상태 표시 */
         .conversation-status {
-            background: linear-gradient(135deg, #f8f9ff, #e6e9ff);
-            border: 2px solid #667eea;
+            background: linear-gradient(135deg, #E8F8FD, #D1F2FC);
+            border: 2px solid #16C2EE;
             border-radius: 15px;
             padding: 20px;
             margin-top: 20px;
@@ -667,7 +676,7 @@
 
         .status-header {
             font-weight: 600;
-            color: #667eea;
+            color: #16C2EE;
             margin-bottom: 15px;
             font-size: 1.1em;
         }
@@ -682,7 +691,7 @@
             background: white;
             padding: 10px 15px;
             border-radius: 10px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #16C2EE;
         }
 
         .info-label {
@@ -751,15 +760,15 @@
         @keyframes pulse {
             0% {
                 transform: scale(1);
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                box-shadow: 0 4px 15px rgba(22, 194, 238, 0.3);
             }
             50% {
                 transform: scale(1.05);
-                box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+                box-shadow: 0 6px 20px rgba(22, 194, 238, 0.5);
             }
             100% {
                 transform: scale(1);
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+                box-shadow: 0 4px 15px rgba(22, 194, 238, 0.3);
             }
         }
 
@@ -954,7 +963,7 @@
             <div class="buttons-container">
                 <button class="reset-btn" onclick="resetForm()">🔄 다시 만들기</button>
                 <a href="/main" class="back-btn">🏠 메인으로</a>
-                <a href="/play" class="back-btn" style="background: linear-gradient(45deg, #667eea, #764ba2);">🎫 내 패스 보기</a>
+                <a href="/play" class="back-btn" style="background: linear-gradient(45deg, #16C2EE, #0FA3D1);">🎫 내 패스 보기</a>
             </div>
         </div>
 
@@ -1632,7 +1641,7 @@
                     <p style="margin-bottom: 2rem; line-height: 1.5;">추천된 ${currentPassData?.recommendations?.length || 0}개 장소가 포함된 패스입니다.<br>자세한 지도는 "지도에서 보기" 버튼을 클릭하세요.</p>
                     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center;">
                         ${currentPassData?.recommendations?.map((rec, idx) => 
-                            `<span style="background: #667eea; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem;">${idx + 1}. ${rec.store_name}</span>`
+                            `<span style="background: #16C2EE; color: white; padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.8rem;">${idx + 1}. ${rec.store_name}</span>`
                         ).join('') || ''}
                     </div>
                 </div>
@@ -1785,7 +1794,7 @@
                         <span style="color: #64748b; font-size: 11px; margin-left: 8px;">${store.area}</span>
                     </div>
                     ${benefitText ? `<div style="margin: 8px 0; padding: 6px; background: #f0f9ff; border-left: 3px solid #0ea5e9; border-radius: 3px;"><div style="color: #0c4a6e; font-size: 12px; font-weight: 500;">${benefitText}</div></div>` : ''}
-                    ${valueText ? `<div style="margin: 6px 0; color: #667eea; font-size: 12px; font-weight: 500;">${valueText}</div>` : ''}
+                    ${valueText ? `<div style="margin: 6px 0; color: #16C2EE; font-size: 12px; font-weight: 500;">${valueText}</div>` : ''}
                     <p style="margin: 6px 0; color: #4a5568; font-size: 12px; line-height: 1.4;">${store.desc}</p>
                 </div>
             `;
@@ -2082,7 +2091,7 @@
             
             const startPointBadge = isStartPoint ? 
                 '<div style="background: #10b981; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-bottom: 8px; text-align: center;">🏁 최적 경로 시작점</div>' : 
-                `<div style="background: #667eea; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-bottom: 8px; text-align: center;">📍 ${order}번째 방문지</div>`;
+                `<div style="background: #16C2EE; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-bottom: 8px; text-align: center;">📍 ${order}번째 방문지</div>`;
             
             const content = `
                 <div style="padding: 12px; min-width: 250px; max-width: 300px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
@@ -2096,7 +2105,7 @@
                         <span style="color: #64748b; font-size: 11px; margin-left: 8px;">${store.area}</span>
                     </div>
                     ${benefitText ? `<div style="margin: 8px 0; padding: 6px; background: #f0f9ff; border-left: 3px solid #0ea5e9; border-radius: 3px;"><div style="color: #0c4a6e; font-size: 12px; font-weight: 500;">${benefitText}</div></div>` : ''}
-                    ${valueText ? `<div style="margin: 6px 0; color: #667eea; font-size: 12px; font-weight: 500;">${valueText}</div>` : ''}
+                    ${valueText ? `<div style="margin: 6px 0; color: #16C2EE; font-size: 12px; font-weight: 500;">${valueText}</div>` : ''}
                     <p style="margin: 6px 0; color: #4a5568; font-size: 12px; line-height: 1.4;">${store.desc}</p>
                 </div>
             `;
@@ -2315,7 +2324,7 @@
             `;
             
             indicator.innerHTML = `
-                <div style="width: 20px; height: 20px; border: 2px solid #e2e8f0; border-top: 2px solid #dc2626; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                <div style="width: 20px; height: 20px; border: 2px solid #e2e8f0; border-top: 2px solid #16C2EE; border-radius: 50%; animation: spin 1s linear infinite;"></div>
                 ${message}
             `;
             
@@ -2522,7 +2531,7 @@
             
             routes.forEach((routeData, index) => {
                 if (routeData.path && routeData.path.length > 0) {
-                    const strokeColor = routeData.isReal ? '#2563eb' : '#60a5fa';
+                    const strokeColor = routeData.isReal ? '#16C2EE' : '#7DD3FC';
                     const strokeWeight = routeData.isReal ? 5 : 4;
                     const strokeOpacity = routeData.isReal ? 0.9 : 0.7;
                     
@@ -2623,7 +2632,7 @@
                 z-index: 1000;
                 font-size: 13px;
                 max-width: 280px;
-                border-left: 4px solid ${mode === 'car' ? '#dc2626' : '#2563eb'};
+                border-left: 4px solid ${mode === 'car' ? '#dc2626' : '#16C2EE'};
             `;
 
             const modeText = mode === 'car' ? '🚗 자동차' : '🚶 도보';
@@ -2636,13 +2645,13 @@
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 8px;">
                     <div>
-                        <div style="font-size: 16px; font-weight: bold; color: ${mode === 'car' ? '#dc2626' : '#2563eb'};">
+                        <div style="font-size: 16px; font-weight: bold; color: ${mode === 'car' ? '#dc2626' : '#16C2EE'};">
                             ${(totalDistance / 1000).toFixed(2)} km
                         </div>
                         <div style="font-size: 11px; color: #64748b;">총 거리</div>
                     </div>
                     <div>
-                        <div style="font-size: 16px; font-weight: bold; color: ${mode === 'car' ? '#dc2626' : '#2563eb'};">
+                        <div style="font-size: 16px; font-weight: bold; color: ${mode === 'car' ? '#dc2626' : '#16C2EE'};">
                             ${Math.round(totalDuration)}분
                         </div>
                         <div style="font-size: 11px; color: #64748b;">예상 시간</div>

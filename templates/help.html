@@ -15,7 +15,7 @@
 
           body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #16C2EE 0%, #0FA3D1 100%);
             min-height: 100vh;
             color: #333;
             line-height: 1.6;
@@ -45,14 +45,14 @@
           hr {
             border: none;
             height: 2px;
-            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            background: linear-gradient(90deg, transparent, #16C2EE, transparent);
             margin: 30px 0;
           }
 
           /* 섹션 제목 */
           .section-title {
             font-size: 32px;
-            color: #667eea;
+            color: #16C2EE;
             margin: 40px 0 30px 0;
             font-weight: 700;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
@@ -69,7 +69,7 @@
           }
 
           .highlight {
-            color: #667eea;
+            color: #16C2EE;
             font-weight: 600;
           }
 
@@ -83,12 +83,15 @@
 
           .step-item {
             display: flex;
+            flex-direction: row;
             align-items: center;
             background: rgba(255, 255, 255, 0.8);
             border-radius: 20px;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
           }
 
           .step-item:hover {
@@ -96,12 +99,8 @@
             box-shadow: 0 20px 40px rgba(0,0,0,0.15);
           }
 
-          .step-item:nth-child(even) {
-            flex-direction: row-reverse;
-          }
-
           .step-number {
-            background: linear-gradient(45deg, #667eea, #764ba2);
+            background: linear-gradient(45deg, #16C2EE, #0FA3D1);
             color: white;
             width: 60px;
             height: 60px;
@@ -111,45 +110,46 @@
             justify-content: center;
             font-size: 24px;
             font-weight: bold;
-            margin: 0 30px;
+            margin-right: 30px;
             flex-shrink: 0;
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
           }
 
+          .step-content-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+          }
+
           .step-image {
-            flex-shrink: 0;
-            margin: 0 30px;
+            margin: 0 0 30px 0;
           }
 
           .step-image img {
             width: auto;
-            height: 100px;
-            max-width: 120px;
+            max-width: 300px;
+            height: auto;
+            max-height: 200px;
             border-radius: 15px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.2);
             transition: transform 0.3s ease;
             object-fit: contain;
-            background: white;
-            padding: 10px;
           }
 
           .step-image img:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
           }
 
           .step-content {
             flex: 1;
-            text-align: left;
-            padding: 0 20px;
-          }
-
-          .step-item:nth-child(even) .step-content {
-            text-align: right;
+            text-align: center;
+            padding: 0;
           }
 
           .step-title {
             font-size: 24px;
-            color: #667eea;
+            color: #16C2EE;
             font-weight: 600;
             margin-bottom: 15px;
           }
@@ -161,8 +161,8 @@
           }
 
           .step-tip {
-            background: rgba(102, 126, 234, 0.1);
-            border-left: 4px solid #667eea;
+            background: rgba(22, 194, 238, 0.1);
+            border-left: 4px solid #16C2EE;
             padding: 15px;
             margin-top: 15px;
             border-radius: 0 10px 10px 0;
@@ -176,7 +176,7 @@
             top: 20px;
             left: 20px;
             background: rgba(255, 255, 255, 0.9);
-            color: #667eea;
+            color: #16C2EE;
             padding: 10px 20px;
             border: none;
             border-radius: 25px;
@@ -229,25 +229,30 @@
             }
             
             .step-item {
-              flex-direction: column !important;
+              flex-direction: column;
+              padding: 30px 20px 20px 20px;
               text-align: center;
-              padding: 20px;
             }
             
-            .step-content {
-              text-align: center !important;
-              padding: 20px 0 0 0;
+            .step-number {
+              margin-right: 0;
+              margin-bottom: 20px;
+              width: 50px;
+              height: 50px;
+              font-size: 20px;
             }
-            
-            .step-number,
+
+            .step-content-wrapper {
+              width: 100%;
+            }
+
             .step-image {
-              margin: 10px 0;
+              margin: 0 0 20px 0;
             }
 
             .step-image img {
-              width: auto;
-              height: 80px;
-              max-width: 100px;
+              max-width: 250px;
+              max-height: 150px;
             }
 
             .back-button {
@@ -278,18 +283,20 @@
                 <!-- 1단계: 테마 선택 -->
                 <div class="step-item">
                     <div class="step-number">1</div>
-                    <div class="step-image">
-                        <img src="/static/images/button.png" alt="테마 선택 버튼">
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">🎯 관심 테마 선택하기</h3>
-                        <p class="step-description">
-                            먼저 여러분의 취향에 맞는 <strong>테마를 선택</strong>해주세요.<br>
-                            해산물, 카페, 전통, 레트로, 조용함 등 다양한 테마 중에서<br>
-                            <strong>여러 개를 동시에 선택</strong>할 수 있습니다.
-                        </p>
-                        <div class="step-tip">
-                            💡 팁: 여러 테마를 조합하면 더 다양하고 재미있는 코스를 만날 수 있어요!
+                    <div class="step-content-wrapper">
+                        <div class="step-image">
+                            <img src="/static/images/button.png" alt="테마 선택 버튼">
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">🎯 관심 테마 선택하기</h3>
+                            <p class="step-description">
+                                먼저 여러분의 취향에 맞는 <strong>테마를 선택</strong>해주세요.<br>
+                                해산물, 카페, 전통, 레트로, 조용함 등 다양한 테마 중에서<br>
+                                <strong>여러 개를 동시에 선택</strong>할 수 있습니다.
+                            </p>
+                            <div class="step-tip">
+                                💡 팁: 여러 테마를 조합하면 더 다양하고 재미있는 코스를 만날 수 있어요!
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -297,18 +304,20 @@
                 <!-- 2단계: 요청사항 작성 -->
                 <div class="step-item">
                     <div class="step-number">2</div>
-                    <div class="step-image">
-                        <img src="/static/images/write.png" alt="요청사항 작성">
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">✍️ 상세 요청사항 작성하기</h3>
-                        <p class="step-description">
-                            AI가 더 정확한 추천을 할 수 있도록<br>
-                            <strong>자세한 요청사항을 작성</strong>해주세요.<br>
-                            예: "친구와 함께 맛있는 음식을 먹으며 사진 찍기 좋은 곳을 가고 싶어요"
-                        </p>
-                        <div class="step-tip">
-                            💡 팁: 구체적으로 작성할수록 더 만족스러운 여행 코스를 받을 수 있어요!
+                    <div class="step-content-wrapper">
+                        <div class="step-image">
+                            <img src="/static/images/chat.png" alt="요청사항 작성">
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">💬 AI 챗봇과 대화하기</h3>
+                            <p class="step-description">
+                                이제 더욱 쉽고 자연스럽게! <strong>AI 챗봇과 대화</strong>하며<br>
+                                원하는 여행 스타일과 취향을 자유롭게 이야기해보세요.<br>
+                                예: "친구와 함께 맛있는 음식을 먹으며 사진 찍기 좋은 곳을 가고 싶어요"
+                            </p>
+                            <div class="step-tip">
+                                💡 팁: 일반 대화하듯 편하게 말씀해주세요! AI가 여러분의 의도를 정확히 파악합니다.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -316,19 +325,21 @@
                 <!-- 3단계: 패스 종류 선택 -->
                 <div class="step-item">
                     <div class="step-number">3</div>
-                    <div class="step-image">
-                        <img src="/static/images/option.png" alt="패스 옵션 선택">
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">🎫 패스 종류 선택하기</h3>
-                        <p class="step-description">
-                            예산과 원하는 혜택에 따라 <strong>패스 종류를 선택</strong>하세요.<br>
-                            • <strong>라이트 패스</strong>: 기본적인 할인 혜택<br>
-                            • <strong>프리미엄 패스</strong>: 더 많은 혜택과 특별 서비스<br>
-                            • <strong>시민 패스</strong>: 지역 주민을 위한 특가 혜택
-                        </p>
-                        <div class="step-tip">
-                            💡 팁: 각 패스마다 포함된 혜택과 가격이 다르니 꼼꼼히 비교해보세요!
+                    <div class="step-content-wrapper">
+                        <div class="step-image">
+                            <img src="/static/images/option.png" alt="패스 옵션 선택">
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">🎫 패스 종류 선택하기</h3>
+                            <p class="step-description">
+                                예산과 원하는 혜택에 따라 <strong>패스 종류를 선택</strong>하세요.<br>
+                                • <strong>라이트 패스</strong>: 기본적인 할인 혜택<br>
+                                • <strong>프리미엄 패스</strong>: 더 많은 혜택과 특별 서비스<br>
+                                • <strong>시민 패스</strong>: 지역 주민을 위한 특가 혜택
+                            </p>
+                            <div class="step-tip">
+                                💡 팁: 각 패스마다 포함된 혜택과 가격이 다르니 꼼꼼히 비교해보세요!
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -336,18 +347,20 @@
                 <!-- 4단계: 패스 생성 -->
                 <div class="step-item">
                     <div class="step-number">4</div>
-                    <div class="step-image">
-                        <img src="/static/images/play.png" alt="패스 생성 버튼">
-                    </div>
-                    <div class="step-content">
-                        <h3 class="step-title">🚀 패스 생성하기</h3>
-                        <p class="step-description">
-                            모든 설정이 완료되었다면 <strong>이 버튼을 클릭</strong>하세요!<br>
-                            AI가 여러분만을 위한 <strong>맞춤형 여행 패스</strong>를 생성합니다.<br>
-                            각 혜택에는 <strong>특수코드</strong>가 부여되며, 코드 입력으로 사용 처리됩니다.
-                        </p>
-                        <div class="step-tip">
-                            💡 팁: 제휴 가게에서 제공한 <strong>특수코드</strong>를 입력해 혜택을 즉시 사용할 수 있어요!
+                    <div class="step-content-wrapper">
+                        <div class="step-image">
+                            <img src="/static/images/produce.png" alt="패스 생성 버튼">
+                        </div>
+                        <div class="step-content">
+                            <h3 class="step-title">🚀 패스 생성하기</h3>
+                            <p class="step-description">
+                                모든 설정이 완료되었다면 <strong>이 버튼을 클릭</strong>하세요!<br>
+                                AI가 여러분만을 위한 <strong>맞춤형 여행 패스</strong>를 생성합니다.<br>
+                                각 혜택에는 <strong>특수코드</strong>가 부여되며, 코드 입력으로 사용 처리됩니다.
+                            </p>
+                            <div class="step-tip">
+                                💡 팁: 제휴 가게에서 제공한 <strong>특수코드</strong>를 입력해 혜택을 즉시 사용할 수 있어요!
+                            </div>
                         </div>
                     </div>
                 </div>
