@@ -68,7 +68,10 @@ pip install -r requirements.txt
 
 ```env
 GEMINI_API_KEY=your_google_api_key_here
-GEMINI_MODEL=gemini-2.5-flash
+# 챗봇용 모델 (2.5 flash)
+GEMINI_CHATBOT_MODEL=gemini-2.5-flash
+# 패스 생성용 모델 (2.5 pro)
+GEMINI_PASS_MODEL=gemini-2.5-pro
 ```
 
 ### 3. 애플리케이션 실행

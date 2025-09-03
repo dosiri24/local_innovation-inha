@@ -307,3 +307,119 @@ def get_all_passes() -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"패스 목록 조회 중 오류: {e}")
         return []
+
+def load_benefits_raw() -> List[Dict]:
+    """혜택 원본 데이터 로드 (모든 필드 포함)"""
+    try:
+        benefits_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'benefits.json')
+        with open(benefits_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            if 'benefits' in data:
+                return data['benefits']
+            else:
+                return data
+    except FileNotFoundError:
+        print("benefits.json 파일을 찾을 수 없습니다.")
+        return []
+    except Exception as e:
+        print(f"혜택 데이터 로드 중 오류: {e}")
+        return []
+
+def get_synergy_score(store_data: Dict) -> int:
+    """상점의 상생 점수 계산 (0-100점)"""
+    base_score = 50
+    
+    # 프랜차이즈 여부 (-30점)
+    if store_data.get('is_franchise', False):
+        base_score -= 30
+    
+    # 리뷰 수 (적을수록 가점)
+    reviews = store_data.get('reviews', 0)
+    if reviews < 50:
+        base_score += 30
+    elif reviews < 100:
+        base_score += 20
+    elif reviews < 200:
+        base_score += 10
+    
+    # 지역 특성 (골목상권, 제물포시장 가점)
+    area = store_data.get('area', '')
+    if area in ["골목상권", "제물포시장"]:
+        base_score += 25
+    
+    # 0-100 범위로 제한
+    return max(0, min(100, base_score))
+
+def calculate_total_eco_value(benefits: List[Benefit]) -> int:
+    """혜택들의 총 경제적 가치 계산"""
+    total_value = 0
+    benefits_raw = load_benefits_raw()
+    
+    # store_id별 혜택 데이터 맵핑
+    benefit_value_map = {}
+    for benefit_data in benefits_raw:
+        store_id = benefit_data.get('store_id', '')
+        desc = benefit_data.get('desc', '')
+        eco_value = benefit_data.get('eco_value', 0)
+        benefit_value_map[f"{store_id}_{desc}"] = eco_value
+    
+    for benefit in benefits:
+        key = f"{benefit.store_name}_{benefit.description}"
+        eco_value = benefit_value_map.get(key, 3000)  # 기본값 3000원
+        total_value += eco_value
+        print(f"[가치 계산] {benefit.store_name} - {benefit.description}: {eco_value}원")
+    
+    print(f"[가치 계산] 총 혜택 가치: {total_value}원")
+    return total_value
+
+def calculate_average_synergy_score(stores: List[Store]) -> float:
+    """상점들의 평균 상생 점수 계산"""
+    if not stores:
+        return 0.0
+    
+    stores_raw = load_stores_raw()
+    store_data_map = {store['name']: store for store in stores_raw}
+    
+    total_score = 0
+    valid_stores = 0
+    
+    for store in stores:
+        store_data = store_data_map.get(store.name)
+        if store_data:
+            synergy_score = get_synergy_score(store_data)
+            total_score += synergy_score
+            valid_stores += 1
+            print(f"[상생점수] {store.name}: {synergy_score}점")
+    
+    if valid_stores == 0:
+        return 0.0
+    
+    avg_score = total_score / valid_stores
+    print(f"[상생점수] 평균 상생점수: {avg_score:.1f}점")
+    return avg_score
+
+def validate_pass_quality(pass_obj: Pass, pass_price: int) -> Dict[str, Any]:
+    """패스 품질 검증 (가치 대비 효과 150% 이상, 상생점수 70점 이상)"""
+    total_value = calculate_total_eco_value(pass_obj.benefits)
+    avg_synergy = calculate_average_synergy_score(pass_obj.stores)
+    value_ratio = (total_value / pass_price) * 100 if pass_price > 0 else 0
+    
+    is_valid = value_ratio >= 150 and avg_synergy >= 70
+    
+    result = {
+        'is_valid': is_valid,
+        'total_value': total_value,
+        'value_ratio': value_ratio,
+        'avg_synergy': avg_synergy,
+        'pass_price': pass_price,
+        'requirements': {
+            'min_value_ratio': 150,
+            'min_synergy_score': 70
+        }
+    }
+    
+    print(f"[품질 검증] 가치 대비 효과: {value_ratio:.1f}% (최소 150%)")
+    print(f"[품질 검증] 평균 상생점수: {avg_synergy:.1f}점 (최소 70점)")
+    print(f"[품질 검증] 품질 기준 충족: {'✅' if is_valid else '❌'}")
+    
+    return result
