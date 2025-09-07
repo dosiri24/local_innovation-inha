@@ -61,6 +61,12 @@ def save_pass_to_datastore(pass_obj: Pass, user_email: str) -> bool:
         
         # JSON을 Blob으로 저장 (크기 제한 없음)
         pass_data_json = json.dumps(pass_data, ensure_ascii=False)
+        
+        # JSON 크기 확인 (안전성)
+        json_size = len(pass_data_json.encode('utf-8'))
+        if json_size > 1000000:  # 1MB 제한
+            print(f"[데이터스토어] 경고: 패스 데이터가 매우 큼 ({json_size} 바이트)")
+        
         entity.update({
             'user_email': user_email,
             'pass_data_blob': pass_data_json.encode('utf-8'),  # Blob으로 저장
@@ -104,18 +110,37 @@ def load_pass_from_datastore(pass_id: str) -> Optional[Pass]:
         pass_data_blob = entity.get('pass_data_blob')
         if pass_data_blob:
             # 새 방식 (Blob)
-            pass_data = json.loads(pass_data_blob.decode('utf-8'))
+            try:
+                pass_data = json.loads(pass_data_blob.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError) as decode_error:
+                print(f"[데이터스토어] Blob 데이터 파싱 실패: {decode_error}")
+                return None
         else:
             # 이전 방식 (JSON 문자열) - 하위 호환성
-            pass_data = json.loads(entity.get('pass_data_json', '{}'))
+            try:
+                pass_data_json = entity.get('pass_data_json', '{}')
+                pass_data = json.loads(pass_data_json)
+            except json.JSONDecodeError as json_error:
+                print(f"[데이터스토어] JSON 문자열 파싱 실패: {json_error}")
+                return None
+        
+        if not pass_data:
+            print(f"[데이터스토어] 패스 데이터가 비어있음: {pass_id}")
+            return None
         
         # Pass 객체로 변환
-        from services import _create_pass_from_data
-        pass_obj = _create_pass_from_data(pass_data)
-        
-        if pass_obj:
-            print(f"[데이터스토어] 패스 로드 완료: {pass_id}")
-        return pass_obj
+        try:
+            from services import _create_pass_from_data
+            pass_obj = _create_pass_from_data(pass_data)
+            
+            if pass_obj:
+                print(f"[데이터스토어] 패스 로드 완료: {pass_id}")
+            else:
+                print(f"[데이터스토어] 패스 객체 변환 실패: {pass_id}")
+            return pass_obj
+        except Exception as create_error:
+            print(f"[데이터스토어] 패스 객체 생성 실패: {create_error}")
+            return None
         
     except Exception as e:
         print(f"[데이터스토어] 패스 로드 실패: {e}")
@@ -154,27 +179,49 @@ def get_user_passes_from_datastore(user_email: str) -> List[Dict[str, Any]]:
         
         for entity in query.fetch():
             try:
-                # Blob 데이터 파싱
+                # Blob 데이터 파싱 (안전하게)
                 pass_data_blob = entity.get('pass_data_blob')
                 if pass_data_blob:
                     # 새 방식 (Blob)
-                    pass_data = json.loads(pass_data_blob.decode('utf-8'))
+                    try:
+                        pass_data = json.loads(pass_data_blob.decode('utf-8'))
+                    except (json.JSONDecodeError, UnicodeDecodeError) as decode_error:
+                        print(f"[데이터스토어] 패스 데이터 파싱 실패: {decode_error}")
+                        continue
                 else:
                     # 이전 방식 (JSON 문자열) - 하위 호환성
-                    pass_data = json.loads(entity.get('pass_data_json', '{}'))
+                    try:
+                        pass_data_json = entity.get('pass_data_json', '{}')
+                        pass_data = json.loads(pass_data_json)
+                    except json.JSONDecodeError as json_error:
+                        print(f"[데이터스토어] JSON 문자열 파싱 실패: {json_error}")
+                        continue
+                
+                if not pass_data or not pass_data.get('pass_id'):
+                    print("[데이터스토어] 유효하지 않은 패스 데이터, 건너뛰기")
+                    continue
                 
                 theme_name = theme_names.get(pass_data.get('theme', '').lower(), pass_data.get('theme', '테마'))
                 pass_type_name = pass_type_names.get(pass_data.get('pass_type', '').lower(), pass_data.get('pass_type', '타입'))
                 pass_name = f"{theme_name} {pass_type_name} 패스"
                 
-                # 유효기간 계산
+                # 유효기간 계산 (안전하게)
                 created_at = pass_data.get('created_at', datetime.now().isoformat())
                 if isinstance(created_at, str):
-                    created_date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    try:
+                        created_date = datetime.fromisoformat(created_at.replace('Z', '+00:00'))
+                    except (ValueError, TypeError) as date_error:
+                        print(f"[데이터스토어] 날짜 파싱 실패: {date_error}, 현재 시간 사용")
+                        created_date = datetime.now()
                 else:
-                    created_date = created_at
+                    created_date = created_at if created_at else datetime.now()
                     
-                valid_until = created_date + timedelta(days=30)
+                # 유효기간은 30일
+                try:
+                    valid_until = created_date + timedelta(days=30)
+                except TypeError:
+                    print("[데이터스토어] 유효기간 계산 실패, 기본값 사용")
+                    valid_until = datetime.now() + timedelta(days=30)
                 
                 # 패스 상태 결정
                 now = datetime.now(timezone.utc) if created_date.tzinfo else datetime.now()

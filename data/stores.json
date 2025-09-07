@@ -62,15 +62,15 @@
     },
     {
       "id": "S006",
-      "name": "떡백화점",
+      "name": "성광방앗간",
       "category": "음식점",
-      "area": "제물포시장",
+      "area": "골목상권",
       "themes": ["전통", "떡", "한식"],
-      "desc": "3대째 이어온 전통 떡집",
-      "reviews": 0,
+      "desc": "70년째 이어온 전통 떡집",
+      "reviews": 3,
       "is_franchise": false,
-      "latitude": 37.464676048899506,
-      "longitude": 126.65645170902988
+      "latitude": 37.47590760363626,
+      "longitude": 126.62824039875402
     },
     {
       "id": "S007",
@@ -218,15 +218,15 @@
     },
     {
       "id": "S019",
-      "name": "꼬끼오치킨",
+      "name": "개항로통닭",
       "category": "음식점",
       "area": "골목상권",
-      "themes": ["치킨", "야식", "술안주"],
-      "desc": "바삭한 치킨으로 유명한 동네 치킨집",
-      "reviews": 11,
-      "is_franchise": false,
-      "latitude": 37.46290366258156,
-      "longitude": 126.65705122072016
+      "themes": ["치킨", "야식", "레트로"],
+      "desc": "바삭한 닭킨으로 유명한 동네 치킨집",
+      "reviews": 275,
+      "is_franchise": false, 
+      "latitude": 37.472894512591246,
+      "longitude": 126.63457219868175
     },
     {
       "id": "S020",

@@ -28,8 +28,16 @@ def create_app():
                 static_folder=static_folder)
     CORS(app)  # CORS 허용
 
-    # 세션 설정 - Google App Engine 읽기 전용 파일시스템 문제 해결
-    app.config['SECRET_KEY'] = secrets.token_hex(16)
+    # 세션 설정 - SECRET_KEY 고정으로 세션 유지 보장
+    # 🚨 중요: SECRET_KEY가 변경되면 모든 세션이 무효화되므로 고정값 사용
+    secret_key = os.environ.get('SECRET_KEY')
+    if not secret_key:
+        # 환경변수가 없으면 고정된 개발용 키 사용 (프로덕션에서는 반드시 환경변수 설정)
+        secret_key = 'jemulpogo-demo-secret-key-fixed-2024-do-not-change-this-value-or-sessions-will-be-lost'
+        print("[보안 경고] 프로덕션 환경에서는 반드시 SECRET_KEY 환경변수를 설정하세요!")
+    
+    app.config['SECRET_KEY'] = secret_key
+    print(f"[세션 보안] SECRET_KEY 설정됨 (길이: {len(secret_key)})")
 
     # 환경에 따른 세션 설정
     is_production = (
@@ -41,23 +49,25 @@ def create_app():
     print(f"[환경 감지] Production 환경: {is_production}")
 
     if is_production:
-        # 프로덕션 환경: Flask의 기본 세션 사용 (클라이언트 사이드)
-        print("[세션] 프로덕션 환경: 클라이언트 사이드 세션 사용")
+        # 프로덕션 환경: 영구 세션 설정으로 안정성 강화
+        print("[세션] 프로덕션 환경: 영구 클라이언트 사이드 세션 사용")
         app.config['SESSION_COOKIE_SECURE'] = False  # HTTP에서도 작동하도록 설정
-        app.config['SESSION_COOKIE_HTTPONLY'] = True
-        app.config['SESSION_COOKIE_SAMESITE'] = None
-        app.config['SESSION_PERMANENT'] = False
-        # Flask-Session 초기화 하지 않음 (기본 Flask 세션 사용)
+        app.config['SESSION_COOKIE_HTTPONLY'] = False  # JavaScript 접근 허용
+        app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # 쿠키 설정과 일치
+        app.config['SESSION_PERMANENT'] = True  # 영구 세션으로 설정
+        app.config['PERMANENT_SESSION_LIFETIME'] = 60*60*24*30  # 30일로 연장 (기존 7일에서 확대)
+        # Flask-Session 초기화 하지 않음 (기본 Flask 세션 사용하되 SECRET_KEY 고정으로 안정성 확보)
     else:
-        # 개발 환경: 파일시스템 세션 사용
+        # 개발 환경: 파일시스템 세션 사용 (안정성 강화)
         print("[세션] 개발 환경: 파일시스템 세션 사용")
         app.config['SESSION_TYPE'] = 'filesystem'
-        app.config['SESSION_PERMANENT'] = False
+        app.config['SESSION_PERMANENT'] = True  # 개발환경도 영구 세션으로 변경
         app.config['SESSION_USE_SIGNER'] = True
         app.config['SESSION_KEY_PREFIX'] = 'jemulpogo:'
         app.config['SESSION_COOKIE_SECURE'] = False
         app.config['SESSION_COOKIE_HTTPONLY'] = True
         app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+        app.config['PERMANENT_SESSION_LIFETIME'] = 60*60*24*30  # 개발환경도 30일로 연장
         # 파일시스템 세션 디렉토리를 임시 디렉토리로 설정
         session_dir = os.path.join(parent_dir, 'flask_session')
         os.makedirs(session_dir, exist_ok=True)

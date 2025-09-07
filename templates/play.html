@@ -51,7 +51,6 @@
             justify-content: center;
             gap: 15px;
             margin-bottom: 30px;
-            flex-wrap: wrap;
         }
 
         .filter-btn {
@@ -61,226 +60,252 @@
             color: #16C2EE;
             border-radius: 25px;
             cursor: pointer;
-            transition: all 0.3s;
-            font-weight: 500;
+            transition: all 0.3s ease;
+            font-weight: 600;
         }
 
+        .filter-btn:hover,
         .filter-btn.active {
             background: #16C2EE;
             color: white;
         }
 
-        .filter-btn:hover {
-            background: #16C2EE;
-            color: white;
-            transform: translateY(-2px);
-        }
-
         .passes-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
         }
 
         .pass-card {
-            background: linear-gradient(135deg, #16C2EE, #0FA3D1);
+            background: white;
+            border: 2px solid #e0e0e0;
             border-radius: 15px;
-            padding: 20px;
-            color: white;
-            position: relative;
-            overflow: hidden;
-            box-shadow: 0 5px 15px rgba(22, 194, 238, 0.3);
-            transition: transform 0.3s, box-shadow 0.3s;
+            padding: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
 
         .pass-card:hover {
+            border-color: #16C2EE;
             transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(22, 194, 238, 0.4);
-        }
-
-        .pass-card::before {
-            content: '';
-            position: absolute;
-            top: -50px;
-            right: -50px;
-            width: 100px;
-            height: 100px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 50%;
+            box-shadow: 0 10px 25px rgba(22, 194, 238, 0.2);
         }
 
         .pass-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .pass-title {
-            font-size: 1.3em;
+            font-size: 1.4em;
             font-weight: 700;
+            color: #333;
         }
 
         .pass-status {
             padding: 5px 12px;
             border-radius: 15px;
-            font-size: 0.8em;
+            font-size: 0.9em;
             font-weight: 600;
         }
 
         .status-active {
-            background: rgba(46, 204, 113, 0.2);
-            color: #2ecc71;
+            background: #e8f5e8;
+            color: #2e7d32;
         }
 
         .status-expired {
-            background: rgba(231, 76, 60, 0.2);
-            color: #e74c3c;
+            background: #ffeaea;
+            color: #d32f2f;
         }
 
         .status-used {
-            background: rgba(241, 196, 15, 0.2);
-            color: #f1c40f;
+            background: #fff3e0;
+            color: #f57c00;
         }
 
         .pass-info {
-            margin: 10px 0;
+            margin-bottom: 20px;
         }
 
         .pass-info div {
-            margin: 8px 0;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            margin-bottom: 8px;
         }
 
-        .pass-info .label {
+        .label {
             font-weight: 600;
-            opacity: 0.9;
+            color: #555;
         }
 
-        .pass-info .value {
-            font-weight: 400;
+        .value {
+            color: #333;
         }
 
         .pass-stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
         }
 
         .stat-item {
             text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 15px;
-            border-radius: 10px;
         }
 
         .stat-number {
-            font-size: 1.8em;
+            font-size: 1.5em;
             font-weight: 700;
-            margin-bottom: 5px;
+            color: #16C2EE;
         }
 
         .stat-label {
             font-size: 0.9em;
-            opacity: 0.8;
+            color: #666;
+            margin-top: 5px;
         }
 
         .pass-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 20px;
+            text-align: center;
         }
 
-        .view-details-btn {
-            background: rgba(255, 255, 255, 0.2);
+        .view-btn {
+            background: linear-gradient(135deg, #16C2EE, #0FA3D1);
             color: white;
-            padding: 10px 20px;
             border: none;
-            border-radius: 20px;
-            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1em;
             font-weight: 600;
-            transition: all 0.3s;
-            backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
         }
 
-        .view-details-btn:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
+        .view-btn:hover {
+            background: linear-gradient(135deg, #0FA3D1, #0d8cb5);
+            transform: translateY(-2px);
         }
 
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 80px 20px;
             color: #666;
         }
 
         .empty-state h3 {
+            font-size: 2em;
             margin-bottom: 15px;
             color: #16C2EE;
-            font-size: 1.5em;
         }
 
         .empty-state p {
-            margin-bottom: 25px;
+            font-size: 1.1em;
+            margin-bottom: 20px;
         }
 
-        .back-btn {
-            display: inline-block;
+        .create-pass-btn {
             background: linear-gradient(135deg, #16C2EE, #0FA3D1);
             color: white;
-            padding: 12px 24px;
-            text-decoration: none;
+            border: none;
+            padding: 15px 30px;
             border-radius: 25px;
+            font-size: 1.1em;
             font-weight: 600;
-            transition: all 0.3s;
-            margin: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .back-btn:hover {
+        .create-pass-btn:hover {
+            background: linear-gradient(135deg, #0FA3D1, #0d8cb5);
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(22, 194, 238, 0.4);
         }
 
         .pagination {
             display: flex;
             justify-content: center;
-            align-items: center;
             gap: 10px;
             margin-top: 30px;
         }
 
         .page-btn {
-            padding: 8px 15px;
+            padding: 10px 15px;
             border: 2px solid #16C2EE;
             background: white;
             color: #16C2EE;
-            border-radius: 20px;
-            text-decoration: none;
-            transition: all 0.3s;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
+        .page-btn:hover,
         .page-btn.active {
             background: #16C2EE;
             color: white;
         }
 
-        .page-btn:hover {
+        .nav-buttons {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 2px solid #16C2EE;
+            color: #16C2EE;
+            padding: 12px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn:hover {
             background: #16C2EE;
             color: white;
         }
 
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #e0e0e0;
+            border-top: 5px solid #16C2EE;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         @media (max-width: 768px) {
             .container {
-                margin: 10px;
                 padding: 20px;
+                margin: 10px;
             }
 
-            .header h1 {
-                font-size: 2em;
+            .passes-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
             }
 
             .filters {
@@ -288,12 +313,10 @@
                 align-items: center;
             }
 
-            .passes-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .pass-stats {
-                grid-template-columns: repeat(2, 1fr);
+            .nav-buttons {
+                bottom: 20px;
+                flex-direction: column;
+                width: 200px;
             }
         }
     </style>
@@ -301,41 +324,47 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎫 내 패스 관리</h1>
-            <p>생성한 패스들을 확인하고 관리하세요</p>
+            <h1>내 패스 관리</h1>
+            <p>발급받은 제물포GO 패스를 확인하고 사용해보세요</p>
         </div>
 
         <div class="filters">
             <button class="filter-btn active" onclick="filterPasses('all')">전체</button>
-            <button class="filter-btn" onclick="filterPasses('active')">활성</button>
-            <button class="filter-btn" onclick="filterPasses('expired')">만료</button>
-            <button class="filter-btn" onclick="filterPasses('used')">사용완료</button>
+            <button class="filter-btn" onclick="filterPasses('active')">활성 패스</button>
+            <button class="filter-btn" onclick="filterPasses('expired')">만료된 패스</button>
+            <button class="filter-btn" onclick="filterPasses('used')">사용 완료</button>
         </div>
 
-        <div id="passes-container" class="passes-grid">
-            <!-- 패스 카드들이 여기에 동적으로 추가됩니다 -->
+        <div class="loading" id="loading-state" style="display: none;">
+            <div class="loading-spinner"></div>
+            <p>패스 데이터를 불러오는 중...</p>
         </div>
 
-        <div id="empty-state" class="empty-state" style="display: none;">
-            <h3>🎯 아직 생성된 패스가 없습니다</h3>
-            <p>새로운 패스를 만들어서 제물포구 주변을 탐험해보세요!</p>
+        <div class="passes-grid" id="passes-container">
+            <!-- 패스 카드들이 여기에 동적으로 생성됩니다 -->
+        </div>
+
+        <div class="empty-state" id="empty-state" style="display: none;">
+            <h3>🎫 패스가 없습니다</h3>
+            <p>아직 발급받은 패스가 없네요.<br>새로운 패스를 생성해보세요!</p>
+            <a href="/pass-generator" class="create-pass-btn">패스 생성하기</a>
         </div>
 
         <div class="pagination" id="pagination" style="display: none;">
-            <!-- 페이지네이션이 여기에 동적으로 추가됩니다 -->
+            <!-- 페이지네이션이 여기에 동적으로 생성됩니다 -->
         </div>
+    </div>
 
-        <div style="text-align: center; margin-top: 40px;">
-            <a href="/main" class="back-btn">🏠 메인으로 돌아가기</a>
-            <a href="/pass-generator" class="back-btn">🎯 새 패스 만들기</a>
-        </div>
+    <div class="nav-buttons">
+        <a href="/main" class="nav-btn">🏠 메인으로</a>
+        <a href="/pass-generator" class="nav-btn">✨ 패스 생성</a>
     </div>
 
     <script>
         let allPasses = [];
         let filteredPasses = [];
-        let currentFilter = 'all';
         let currentPage = 1;
+        let currentFilter = 'all';
         const passesPerPage = 6;
 
         // 페이지 로드시 패스 데이터 가져오기
@@ -345,6 +374,7 @@
 
         async function loadPasses() {
             console.log('📋 패스 로딩 시작...');
+            showLoading(true);
             
             try {
                 const response = await fetch('/api/user/passes');
@@ -359,17 +389,26 @@
                         filteredPasses = allPasses;
                         console.log(`✅ ${allPasses.length}개의 패스를 로드했습니다.`);
                         
+                        // 패스 데이터 구조 확인
+                        if (allPasses.length > 0) {
+                            console.log('📋 첫 번째 패스 데이터 구조:', allPasses[0]);
+                            console.log('📋 첫 번째 패스 필드들:', Object.keys(allPasses[0]));
+                        }
+                        
                         if (data.debug_info) {
                             console.log('🔍 디버그 정보:', data.debug_info);
                         }
                         
+                        showLoading(false);
                         displayPasses();
                     } else {
                         console.warn('⚠️ API 응답에서 success가 false:', data);
+                        showLoading(false);
                         showEmptyState(data.error || '패스 데이터를 가져올 수 없습니다.');
                     }
                 } else {
                     console.error('❌ API 호출 실패:', response.status, response.statusText);
+                    showLoading(false);
                     
                     // 401 Unauthorized인 경우 로그인 페이지로 리디렉션
                     if (response.status === 401) {
@@ -382,7 +421,24 @@
                 }
             } catch (error) {
                 console.error('💥 패스 로딩 중 네트워크 오류:', error);
+                showLoading(false);
                 showEmptyState('네트워크 오류가 발생했습니다. 인터넷 연결을 확인해주세요.');
+            }
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading-state');
+            const container = document.getElementById('passes-container');
+            const empty = document.getElementById('empty-state');
+            const pagination = document.getElementById('pagination');
+
+            if (show) {
+                loading.style.display = 'block';
+                container.style.display = 'none';
+                empty.style.display = 'none';
+                pagination.style.display = 'none';
+            } else {
+                loading.style.display = 'none';
             }
         }
 
@@ -410,7 +466,12 @@
             const container = document.getElementById('passes-container');
             const emptyState = document.getElementById('empty-state');
 
+            console.log('🎨 displayPasses 호출됨');
+            console.log('📊 filteredPasses 길이:', filteredPasses.length);
+            console.log('📊 filteredPasses 데이터:', filteredPasses);
+
             if (filteredPasses.length === 0) {
+                console.log('❌ 표시할 패스가 없음 - 빈 상태 표시');
                 showEmptyState();
                 return;
             }
@@ -422,13 +483,107 @@
             const endIndex = startIndex + passesPerPage;
             const pagePasses = filteredPasses.slice(startIndex, endIndex);
 
+            console.log(`📄 페이지 ${currentPage}: ${pagePasses.length}개 패스 표시 (${startIndex}-${endIndex})`);
+
             container.innerHTML = '';
-            pagePasses.forEach(pass => {
-                const passCard = createPassCard(pass);
-                container.appendChild(passCard);
+            
+            pagePasses.forEach((pass, index) => {
+                console.log(`🎫 패스 ${index + 1} 카드 생성:`, pass);
+                try {
+                    const passCard = createPassCard(pass);
+                    container.appendChild(passCard);
+                    console.log(`✅ 패스 카드 생성 완료: ${pass.name || pass.pass_id}`);
+                } catch (error) {
+                    console.error(`❌ 패스 카드 생성 실패 (패스 ${index + 1}):`, error, pass);
+                }
             });
 
             updatePagination();
+        }
+
+        function createPassCard(pass) {
+            console.log('🔧 createPassCard 호출됨:', pass);
+            
+            const card = document.createElement('div');
+            card.className = 'pass-card';
+            
+            // 안전한 속성 접근을 위한 기본값 설정
+            const passData = {
+                pass_id: pass.pass_id || '알 수 없음',
+                name: pass.name || `${pass.theme || '테마'} ${pass.pass_type || '타입'} 패스`,
+                status: pass.status || 'active',
+                created_at: pass.created_at || new Date().toISOString(),
+                valid_until: pass.valid_until || new Date(Date.now() + 30*24*60*60*1000).toISOString(),
+                total_places: pass.total_places || pass.store_count || 0,
+                visited_places: pass.visited_places || 0,
+                total_price: pass.total_price || 0
+            };
+            
+            console.log('🔧 정리된 패스 데이터:', passData);
+            
+            const statusClass = passData.status === 'active' ? 'status-active' : 
+                               passData.status === 'expired' ? 'status-expired' : 'status-used';
+            const statusText = passData.status === 'active' ? '활성' : 
+                              passData.status === 'expired' ? '만료' : '사용완료';
+
+            try {
+                card.innerHTML = `
+                    <div class="pass-header">
+                        <div class="pass-title">${passData.name}</div>
+                        <div class="pass-status ${statusClass}">${statusText}</div>
+                    </div>
+                    
+                    <div class="pass-info">
+                        <div>
+                            <span class="label">생성일:</span>
+                            <span class="value">${formatDate(passData.created_at)}</span>
+                        </div>
+                        <div>
+                            <span class="label">유효기간:</span>
+                            <span class="value">${formatDate(passData.valid_until)}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="pass-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">${passData.total_places}</div>
+                            <div class="stat-label">총 장소</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${passData.visited_places}</div>
+                            <div class="stat-label">방문 완료</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">${formatPrice(passData.total_price)}</div>
+                            <div class="stat-label">가격</div>
+                        </div>
+                    </div>
+                    
+                    <div class="pass-actions">
+                        <button class="view-btn" onclick="viewPassDetail('${passData.pass_id}')">
+                            패스 보기
+                        </button>
+                    </div>
+                `;
+                
+                console.log('✅ 패스 카드 HTML 생성 완료');
+                return card;
+                
+            } catch (htmlError) {
+                console.error('❌ HTML 생성 오류:', htmlError);
+                // 오류 발생시 기본 카드 반환
+                card.innerHTML = `
+                    <div class="pass-header">
+                        <div class="pass-title">패스 로딩 오류</div>
+                        <div class="pass-status status-expired">오류</div>
+                    </div>
+                    <div class="pass-info">
+                        <p>패스 데이터를 불러올 수 없습니다.</p>
+                        <p>패스 ID: ${passData.pass_id}</p>
+                    </div>
+                `;
+                return card;
+            }
         }
 
         function showEmptyState(customMessage) {
@@ -443,69 +598,11 @@
             if (customMessage) {
                 const messageElement = emptyState.querySelector('p');
                 if (messageElement) {
-                    messageElement.textContent = customMessage;
+                    messageElement.innerHTML = customMessage;
                 }
             }
             
             emptyState.style.display = 'block';
-        }
-
-        function createPassCard(pass) {
-            const card = document.createElement('div');
-            card.className = 'pass-card';
-            
-            const statusClass = pass.status === 'active' ? 'status-active' : 
-                               pass.status === 'expired' ? 'status-expired' : 'status-used';
-            const statusText = pass.status === 'active' ? '활성' : 
-                              pass.status === 'expired' ? '만료' : '사용완료';
-
-            card.innerHTML = `
-                <div class="pass-header">
-                    <div class="pass-title">${pass.name || '무제'}</div>
-                    <div class="pass-status ${statusClass}">${statusText}</div>
-                </div>
-                
-                <div class="pass-info">
-                    <div>
-                        <span class="label">생성일:</span>
-                        <span class="value">${formatDate(pass.created_at)}</span>
-                    </div>
-                    <div>
-                        <span class="label">유효기간:</span>
-                        <span class="value">${formatDate(pass.valid_until)}</span>
-                    </div>
-                </div>
-                
-                <div class="pass-stats">
-                    <div class="stat-item">
-                        <div class="stat-number">${pass.total_places || 0}</div>
-                        <div class="stat-label">총 장소</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">${pass.visited_places || 0}</div>
-                        <div class="stat-label">방문 완료</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">${pass.total_price || 0}원</div>
-                        <div class="stat-label">패스 가격</div>
-                    </div>
-                </div>
-                
-                <div style="background: rgba(255, 255, 255, 0.1); padding: 15px; border-radius: 10px; margin: 15px 0;">
-                    <div style="color: white; font-weight: 600; margin-bottom: 8px; opacity: 0.9;">패스 테마</div>
-                    <div style="color: white; font-size: 0.9em; opacity: 0.8;">${pass.theme}</div>
-                    <div style="color: white; font-weight: 600; margin: 8px 0 5px 0; opacity: 0.9;">패스 종류</div>
-                    <div style="color: white; font-size: 0.9em; opacity: 0.8;">${pass.pass_type}</div>
-                </div>
-                
-                <div class="pass-actions">
-                    <a href="/pass/${pass.pass_id}" target="_blank" class="view-details-btn">
-                        패스 상세 보기
-                    </a>
-                </div>
-            `;
-            
-            return card;
         }
 
         function updatePagination() {
@@ -522,54 +619,69 @@
 
             // 이전 페이지 버튼
             if (currentPage > 1) {
-                const prevBtn = document.createElement('a');
-                prevBtn.href = '#';
+                const prevBtn = document.createElement('button');
                 prevBtn.className = 'page-btn';
-                prevBtn.textContent = '이전';
-                prevBtn.onclick = (e) => {
-                    e.preventDefault();
-                    currentPage--;
-                    displayPasses();
-                };
+                prevBtn.textContent = '‹ 이전';
+                prevBtn.onclick = () => changePage(currentPage - 1);
                 pagination.appendChild(prevBtn);
             }
 
-            // 페이지 번호들
-            for (let i = 1; i <= totalPages; i++) {
-                const pageBtn = document.createElement('a');
-                pageBtn.href = '#';
+            // 페이지 번호 버튼들
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+
+            for (let i = startPage; i <= endPage; i++) {
+                const pageBtn = document.createElement('button');
                 pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
                 pageBtn.textContent = i;
-                pageBtn.onclick = (e) => {
-                    e.preventDefault();
-                    currentPage = i;
-                    displayPasses();
-                };
+                pageBtn.onclick = () => changePage(i);
                 pagination.appendChild(pageBtn);
             }
 
             // 다음 페이지 버튼
             if (currentPage < totalPages) {
-                const nextBtn = document.createElement('a');
-                nextBtn.href = '#';
+                const nextBtn = document.createElement('button');
                 nextBtn.className = 'page-btn';
-                nextBtn.textContent = '다음';
-                nextBtn.onclick = (e) => {
-                    e.preventDefault();
-                    currentPage++;
-                    displayPasses();
-                };
+                nextBtn.textContent = '다음 ›';
+                nextBtn.onclick = () => changePage(currentPage + 1);
                 pagination.appendChild(nextBtn);
             }
         }
 
+        function changePage(page) {
+            currentPage = page;
+            displayPasses();
+        }
+
+        function viewPassDetail(passId) {
+            console.log('패스 상세 보기:', passId);
+            window.location.href = `/pass/${passId}`;
+        }
+
         function formatDate(dateString) {
-            const date = new Date(dateString);
-            return date.toLocaleDateString('ko-KR', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
+            try {
+                const date = new Date(dateString);
+                if (isNaN(date.getTime())) {
+                    return '날짜 정보 없음';
+                }
+                return date.toLocaleDateString('ko-KR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+            } catch (error) {
+                return '날짜 정보 없음';
+            }
+        }
+
+        function formatPrice(price) {
+            try {
+                const numPrice = Number(price);
+                if (isNaN(numPrice)) return '0원';
+                return numPrice.toLocaleString() + '원';
+            } catch (error) {
+                return '0원';
+            }
         }
     </script>
 </body>

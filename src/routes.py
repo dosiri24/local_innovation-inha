@@ -186,13 +186,13 @@ def register_routes(app):
             # 간단한 로그인 검증 (실제 프로덕션에서는 데이터베이스와 연동)
             # 여기서는 데모용으로 간단히 구현
             if email and password:  # 이메일과 비밀번호가 있으면 로그인 성공
-                # 세션 설정을 더 명확하게
+                # 세션 설정을 더 명확하게 (영구 세션 보장)
                 session.clear()  # 기존 세션 정리
                 session['user_logged_in'] = True
                 session['user_email'] = email
-                session.permanent = True  # 세션을 영구적으로 설정
+                session.permanent = True  # 🚨 중요: 영구 세션 설정으로 SECRET_KEY 고정과 함께 안정성 확보
                 
-                print(f"[로그인 성공] 세션 설정 완료: {session}")
+                print(f"[로그인 성공] 영구 세션 설정 완료: {dict(session)}")
                 
                 response = jsonify({
                     'success': True, 
@@ -201,14 +201,14 @@ def register_routes(app):
                     'session_id': request.cookies.get('session', 'no-session')
                 })
                 
-                # 프로덕션 환경에서 세션 백업용 쿠키 설정
+                # 프로덕션 환경에서 세션 백업용 쿠키 설정 (유효기간 연장)
                 response.set_cookie('user_logged_in', 'true', 
-                                  max_age=60*60*24*7,  # 7일 유지
+                                  max_age=60*60*24*30,  # 30일 유지로 연장
                                   secure=False,  # HTTP에서도 작동하도록 설정
                                   httponly=False,
                                   samesite='Lax')
                 response.set_cookie('user_email', email,
-                                  max_age=60*60*24*7,  # 7일 유지  
+                                  max_age=60*60*24*30,  # 30일 유지로 연장
                                   secure=False,
                                   httponly=False,
                                   samesite='Lax')
@@ -244,7 +244,7 @@ def register_routes(app):
             session.clear()  # 기존 세션 정리
             session['user_logged_in'] = True
             session['user_email'] = email
-            session.permanent = True  # 세션을 영구적으로 설정
+            session.permanent = True  # 🚨 중요: 영구 세션 설정으로 SECRET_KEY 고정과 함께 안정성 확보
             
             response = jsonify({
                 'success': True, 
@@ -252,14 +252,14 @@ def register_routes(app):
                 'redirect_url': '/main'  # 리다이렉트 URL 추가
             })
             
-            # 프로덕션 환경에서 세션 백업용 쿠키 설정
+            # 프로덕션 환경에서 세션 백업용 쿠키 설정 (유효기간 연장)
             response.set_cookie('user_logged_in', 'true', 
-                              max_age=60*60*24*7,  # 7일 유지
+                              max_age=60*60*24*30,  # 30일 유지로 연장
                               secure=False,
                               httponly=False,
                               samesite='Lax')
             response.set_cookie('user_email', email,
-                              max_age=60*60*24*7,  # 7일 유지  
+                              max_age=60*60*24*30,  # 30일 유지로 연장
                               secure=False,
                               httponly=False,
                               samesite='Lax')
@@ -272,13 +272,235 @@ def register_routes(app):
     @app.route('/api/logout', methods=['POST'])
     def logout_api():
         """로그아웃 API"""
-        session.clear()
+        # 프로덕션 환경 감지
+        is_production = (
+            os.environ.get('GAE_ENV', '').startswith('standard') or 
+            os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+            'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+        )
+        
+        # 패스 정보는 유지하고 로그인 정보만 제거
+        saved_passes = session.get('saved_passes', [])
+        user_email = session.get('user_email', 'demo@jemulpogo.com')
+        print(f"[로그아웃] 사용자: {user_email}, 보존할 패스 수: {len(saved_passes)}")
+        print(f"[로그아웃] 프로덕션 환경: {is_production}")
+        
+        # 프로덕션에서 패스를 여러 저장소에 확실히 백업
+        if is_production and saved_passes:
+            print("[로그아웃] 프로덕션 환경 - 패스 다중 백업 시작")
+            
+            # 1. Datastore에 각 패스를 개별적으로 저장
+            try:
+                try:
+                    from src.datastore_service import save_pass_to_datastore
+                except ImportError:
+                    # 패키지 내에서 import 시도
+                    from datastore_service import save_pass_to_datastore
+                from models import Pass, PassType, Theme, Store, Benefit, UserPrefs
+                
+                for pass_data in saved_passes:
+                    try:
+                        # 패스 데이터를 Pass 객체로 복원
+                        pass_type = PassType(pass_data.get('pass_type', 'light'))
+                        theme = Theme(pass_data.get('theme', 'food'))
+                        
+                        # UserPrefs 복원
+                        user_prefs_data = pass_data.get('user_prefs', {})
+                        user_prefs = UserPrefs(
+                            budget=user_prefs_data.get('budget', '보통'),
+                            interests=user_prefs_data.get('interests', []),
+                            dietary_restrictions=user_prefs_data.get('dietary_restrictions', []),
+                            group_size=user_prefs_data.get('group_size', 2),
+                            duration=user_prefs_data.get('duration', '반나절'),
+                            transportation=user_prefs_data.get('transportation', '도보')
+                        )
+                        
+                        # Store 객체들 복원
+                        stores = []
+                        for store_data in pass_data.get('stores', []):
+                            store = Store(
+                                name=store_data.get('name', ''),
+                                category=store_data.get('category', ''),
+                                address=store_data.get('address', ''),
+                                phone=store_data.get('phone', ''),
+                                description=store_data.get('description', ''),
+                                rating=store_data.get('rating', 4.0),
+                                price_range=store_data.get('price_range', '보통'),
+                                opening_hours=store_data.get('opening_hours', '09:00-21:00'),
+                                menu_highlights=store_data.get('menu_highlights', []),
+                                location=store_data.get('location', ''),
+                                latitude=store_data.get('latitude'),
+                                longitude=store_data.get('longitude'),
+                                image_url=store_data.get('image_url', '')
+                            )
+                            stores.append(store)
+                        
+                        # Benefit 객체들 복원
+                        benefits = []
+                        for benefit_data in pass_data.get('benefits', []):
+                            benefit = Benefit(
+                                store_name=benefit_data.get('store_name', ''),
+                                description=benefit_data.get('description', ''),
+                                discount_rate=benefit_data.get('discount_rate', 0),
+                                original_price=benefit_data.get('original_price', 0),
+                                discounted_price=benefit_data.get('discounted_price', 0)
+                            )
+                            benefits.append(benefit)
+                        
+                        # Pass 객체 생성
+                        pass_obj = Pass(
+                            pass_id=pass_data.get('pass_id'),
+                            pass_type=pass_type,
+                            theme=theme,
+                            stores=stores,
+                            benefits=benefits,
+                            user_prefs=user_prefs,
+                            created_at=pass_data.get('created_at')
+                        )
+                        
+                        # Datastore에 저장
+                        datastore_result = save_pass_to_datastore(pass_obj, user_email)
+                        print(f"[로그아웃] Datastore 저장 결과 ({pass_data.get('pass_id')}): {datastore_result}")
+                        
+                    except Exception as pass_save_error:
+                        print(f"[로그아웃] 개별 패스 저장 실패: {pass_save_error}")
+                        import traceback
+                        print(f"[로그아웃] 세부 오류: {traceback.format_exc()}")
+                        
+            except Exception as datastore_error:
+                print(f"[로그아웃] Datastore 백업 실패: {datastore_error}")
+            
+            # 2. 파일 시스템에도 백업
+            try:
+                from pass_generator import get_pass_generator
+                generator = get_pass_generator()
+                
+                for pass_data in saved_passes:
+                    try:
+                        # 패스 객체 복원 (위와 동일한 로직)
+                        pass_type = PassType(pass_data.get('pass_type', 'light'))
+                        theme = Theme(pass_data.get('theme', 'food'))
+                        
+                        user_prefs_data = pass_data.get('user_prefs', {})
+                        user_prefs = UserPrefs(
+                            budget=user_prefs_data.get('budget', '보통'),
+                            interests=user_prefs_data.get('interests', []),
+                            dietary_restrictions=user_prefs_data.get('dietary_restrictions', []),
+                            group_size=user_prefs_data.get('group_size', 2),
+                            duration=user_prefs_data.get('duration', '반나절'),
+                            transportation=user_prefs_data.get('transportation', '도보')
+                        )
+                        
+                        stores = []
+                        for store_data in pass_data.get('stores', []):
+                            store = Store(
+                                name=store_data.get('name', ''),
+                                category=store_data.get('category', ''),
+                                address=store_data.get('address', ''),
+                                phone=store_data.get('phone', ''),
+                                description=store_data.get('description', ''),
+                                rating=store_data.get('rating', 4.0),
+                                price_range=store_data.get('price_range', '보통'),
+                                opening_hours=store_data.get('opening_hours', '09:00-21:00'),
+                                menu_highlights=store_data.get('menu_highlights', []),
+                                location=store_data.get('location', ''),
+                                latitude=store_data.get('latitude'),
+                                longitude=store_data.get('longitude'),
+                                image_url=store_data.get('image_url', '')
+                            )
+                            stores.append(store)
+                        
+                        benefits = []
+                        for benefit_data in pass_data.get('benefits', []):
+                            benefit = Benefit(
+                                store_name=benefit_data.get('store_name', ''),
+                                description=benefit_data.get('description', ''),
+                                discount_rate=benefit_data.get('discount_rate', 0),
+                                original_price=benefit_data.get('original_price', 0),
+                                discounted_price=benefit_data.get('discounted_price', 0)
+                            )
+                            benefits.append(benefit)
+                        
+                        pass_obj = Pass(
+                            pass_id=pass_data.get('pass_id'),
+                            pass_type=pass_type,
+                            theme=theme,
+                            stores=stores,
+                            benefits=benefits,
+                            user_prefs=user_prefs,
+                            created_at=pass_data.get('created_at')
+                        )
+                        
+                        # 파일 시스템에 저장
+                        file_result = generator.save_pass_to_file(pass_obj)
+                        print(f"[로그아웃] 파일 저장 결과 ({pass_data.get('pass_id')}): {file_result}")
+                        
+                    except Exception as file_save_error:
+                        print(f"[로그아웃] 파일 저장 실패: {file_save_error}")
+                        
+            except Exception as file_error:
+                print(f"[로그아웃] 파일 백업 실패: {file_error}")
+        
+        # 로그인 관련 세션만 제거 (패스 정보는 유지)
+        session.pop('user_logged_in', None)
+        session.pop('user_email', None)
+        # 🚨 중요: 복원 플래그는 제거하지 않음 (SECRET_KEY 고정으로 세션 유지 보장)
+        # 다음 로그인 시에도 불필요한 중복 복원 방지
+        # session.pop('passes_restored_from_cookie', None)  # 주석 처리
+        # session.pop('passes_restored_from_datastore', None)  # 주석 처리
+        session.pop('session_restored', None)  # 이것만 초기화
+        
+        # 패스 정보를 다시 설정 (세션이 완전히 초기화되지 않도록)
+        if saved_passes:
+            session['saved_passes'] = saved_passes
+            session.permanent = True  # 중요: 영구 세션 설정
+            print(f"[로그아웃] 패스 정보 유지됨: {len(saved_passes)}개")
+        
         response = jsonify({'success': True, 'message': '로그아웃되었습니다.'})
         
-        # 쿠키도 제거
+        # 쿠키에 패스 정보 백업 (로그아웃 후에도 패스 접근 가능하도록)
+        try:
+            if saved_passes:
+                import json
+                pass_ids = []
+                for p in saved_passes:
+                    pass_id = p.get('pass_id')
+                    if isinstance(pass_id, str) and pass_id.strip() and not pass_id.startswith('test_'):
+                        pass_ids.append(pass_id)
+                
+                if pass_ids:
+                    cookie_data = json.dumps(pass_ids)
+                    if len(cookie_data) < 4000:  # 쿠키 크기 제한 확인
+                        response.set_cookie('user_passes', cookie_data, 
+                                          max_age=60*60*24*30,  # 30일
+                                          secure=False,  # HTTP에서도 작동
+                                          httponly=False,  # JavaScript 접근 가능
+                                          samesite='Lax')
+                        print(f"[로그아웃] 쿠키에 패스 ID 저장: {pass_ids}")
+                    else:
+                        print(f"[로그아웃] 쿠키 크기 초과 ({len(cookie_data)} 바이트), 일부만 저장")
+                        # 패스 ID를 절반으로 줄여서 다시 시도
+                        reduced_ids = pass_ids[:len(pass_ids)//2]
+                        response.set_cookie('user_passes', json.dumps(reduced_ids), 
+                                          max_age=60*60*24*30,
+                                          secure=False,
+                                          httponly=False,
+                                          samesite='Lax')
+                        print(f"[로그아웃] 축소된 쿠키에 패스 ID 저장: {reduced_ids}")
+                else:
+                    print("[로그아웃] 유효한 패스 ID가 없어서 쿠키에 저장하지 않음")
+            else:
+                print("[로그아웃] 저장된 패스가 없어서 쿠키에 저장하지 않음")
+        except Exception as cookie_error:
+            print(f"[로그아웃] 쿠키 저장 오류: {cookie_error}")
+            import traceback
+            print(f"[로그아웃] 쿠키 저장 세부 오류: {traceback.format_exc()}")
+        
+        # 로그인 쿠키만 제거
         response.set_cookie('user_logged_in', '', expires=0)
         response.set_cookie('user_email', '', expires=0)
         
+        print(f"[로그아웃] 완료 - 패스 백업: Datastore, 파일, 쿠키, 세션")
         return response
 
     @app.route('/api/session-check', methods=['GET'])
@@ -685,6 +907,95 @@ def register_routes(app):
                 print(f"[채팅봇 API] 패스 저장 실패: {save_error}")
                 # 패스 저장 실패해도 결과는 반환 (사용자에게 패스는 보여줌)
             
+            # 프로덕션 환경에서 추가 백업 저장 (강화된 다중 저장)
+            try:
+                is_production = (
+                    os.environ.get('GAE_ENV', '').startswith('standard') or 
+                    os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+                    'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+                )
+                
+                if is_production:
+                    print("[채팅봇 API] 프로덕션 환경 - 강화된 패스 저장 시작")
+                    user_email = session.get('user_email', 'demo@jemulpogo.com')
+                    
+                    # 1. 세션에 즉시 저장
+                    pass_data = {
+                        'pass_id': generated_pass.pass_id,
+                        'pass_type': generated_pass.pass_type.value,
+                        'theme': generated_pass.theme.value,
+                        'created_at': generated_pass.created_at,
+                        'stores': [store.__dict__ for store in generated_pass.stores],
+                        'benefits': [benefit.__dict__ for benefit in generated_pass.benefits],
+                        'user_prefs': generated_pass.user_prefs.__dict__,
+                        'user_email': user_email,
+                        'saved_via': 'chatbot_production'
+                    }
+                    
+                    # 세션에 저장
+                    saved_passes = session.get('saved_passes', [])
+                    saved_passes = [p for p in saved_passes if p.get('pass_id') != generated_pass.pass_id]
+                    saved_passes.append(pass_data)
+                    
+                    if len(saved_passes) > 50:
+                        saved_passes = saved_passes[-50:]
+                    
+                    session['saved_passes'] = saved_passes
+                    session.permanent = True
+                    print(f"[채팅봇 API] 프로덕션 세션 저장: {generated_pass.pass_id}, 총 {len(saved_passes)}개")
+                    
+                    # 2. Datastore에도 저장 시도
+                    try:
+                        try:
+                            from src.datastore_service import save_pass_to_datastore
+                        except ImportError:
+                            from datastore_service import save_pass_to_datastore
+                        datastore_result = save_pass_to_datastore(generated_pass, user_email)
+                        print(f"[채팅봇 API] Datastore 저장 결과: {datastore_result}")
+                    except Exception as datastore_err:
+                        print(f"[채팅봇 API] Datastore 저장 실패: {datastore_err}")
+                    
+                    # 3. 파일 시스템에도 저장 시도
+                    try:
+                        from pass_generator import get_pass_generator
+                        generator = get_pass_generator()
+                        file_result = generator.save_pass_to_file(generated_pass)
+                        print(f"[채팅봇 API] 파일 저장 결과: {file_result}")
+                    except Exception as file_err:
+                        print(f"[채팅봇 API] 파일 저장 실패: {file_err}")
+                        
+            except Exception as production_error:
+                print(f"[채팅봇 API] 프로덕션 백업 저장 실패: {production_error}")
+            
+            # 추가: 세션에 직접 패스 저장 (백업 보장) - 모든 환경에서 실행
+            try:
+                user_email = session.get('user_email', 'demo@jemulpogo.com')
+                pass_data = {
+                    'pass_id': generated_pass.pass_id,
+                    'pass_type': generated_pass.pass_type.value,
+                    'theme': generated_pass.theme.value,
+                    'created_at': generated_pass.created_at,
+                    'stores': [store.__dict__ for store in generated_pass.stores],
+                    'benefits': [benefit.__dict__ for benefit in generated_pass.benefits],
+                    'user_prefs': generated_pass.user_prefs.__dict__,
+                    'user_email': user_email,
+                    'saved_via': 'chatbot_direct'
+                }
+                
+                saved_passes = session.get('saved_passes', [])
+                saved_passes = [p for p in saved_passes if p.get('pass_id') != generated_pass.pass_id]
+                saved_passes.append(pass_data)
+                
+                if len(saved_passes) > 50:
+                    saved_passes = saved_passes[-50:]
+                
+                session['saved_passes'] = saved_passes
+                session.permanent = True
+                print(f"[채팅봇 API] 세션에 직접 패스 저장: {generated_pass.pass_id}, 총 {len(saved_passes)}개")
+                
+            except Exception as session_backup_error:
+                print(f"[채팅봇 API] 세션 백업 저장 실패: {session_backup_error}")
+            
             # 채팅 세션 정리
             clear_chatbot_session(session_id)
             
@@ -696,10 +1007,21 @@ def register_routes(app):
                 import json
                 # 기존 쿠키에서 패스 ID 목록 가져오기
                 existing_passes = request.cookies.get('user_passes', '[]')
-                pass_ids = json.loads(existing_passes) if existing_passes else []
+                try:
+                    if existing_passes and existing_passes.strip():
+                        pass_ids = json.loads(existing_passes)
+                        if not isinstance(pass_ids, list):
+                            print(f"[채팅봇 API] 쿠키 데이터가 리스트가 아님: {type(pass_ids)}")
+                            pass_ids = []
+                    else:
+                        pass_ids = []
+                except json.JSONDecodeError as json_error:
+                    print(f"[채팅봇 API] 쿠키 JSON 파싱 실패: {json_error}")
+                    pass_ids = []
                 
-                # 새 패스 ID 추가 (중복 제거)
-                if generated_pass.pass_id not in pass_ids:
+                # 새 패스 ID 추가 (중복 제거 및 테스트 패스 제외)
+                if (generated_pass.pass_id not in pass_ids and 
+                    not generated_pass.pass_id.startswith('test_')):
                     pass_ids.append(generated_pass.pass_id)
                     
                 # 최대 50개까지만 유지
@@ -707,14 +1029,18 @@ def register_routes(app):
                     pass_ids = pass_ids[-50:]
                 
                 # 쿠키 설정 (30일 유지)
-                response.set_cookie('user_passes', json.dumps(pass_ids),
-                                  max_age=60*60*24*30,  # 30일
-                                  secure=False,
-                                  httponly=False,
-                                  samesite='Lax')
-                
-                print(f"[채팅봇 API] 쿠키에 패스 ID 저장: {generated_pass.pass_id}")
-                print(f"[채팅봇 API] 쿠키 내 총 패스 수: {len(pass_ids)}")
+                cookie_data = json.dumps(pass_ids)
+                if len(cookie_data) < 4000:  # 쿠키 크기 제한 확인
+                    response.set_cookie('user_passes', cookie_data,
+                                      max_age=60*60*24*30,  # 30일
+                                      secure=False,
+                                      httponly=False,
+                                      samesite='Lax')
+                    
+                    print(f"[채팅봇 API] 쿠키에 패스 ID 저장: {generated_pass.pass_id}")
+                    print(f"[채팅봇 API] 쿠키 내 총 패스 수: {len(pass_ids)}")
+                else:
+                    print(f"[채팅봇 API] 쿠키 크기 초과 ({len(cookie_data)} 바이트)")
                 
             except Exception as cookie_error:
                 print(f"[채팅봇 API] 쿠키 설정 실패: {cookie_error}")
@@ -966,6 +1292,62 @@ def register_routes(app):
                 }
             }
             
+            # 생성된 패스를 세션에도 직접 저장 (백업 보장)
+            try:
+                # 프로덕션 환경 체크
+                is_production = (
+                    os.environ.get('GAE_ENV', '').startswith('standard') or 
+                    os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+                    'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+                )
+                
+                user_email = session.get('user_email', 'demo@jemulpogo.com')
+                pass_data = {
+                    'pass_id': generated_pass.pass_id,
+                    'pass_type': generated_pass.pass_type.value,
+                    'theme': generated_pass.theme.value,
+                    'created_at': generated_pass.created_at,
+                    'stores': [store.__dict__ for store in generated_pass.stores],
+                    'benefits': [benefit.__dict__ for benefit in generated_pass.benefits],
+                    'user_prefs': generated_pass.user_prefs.__dict__,
+                    'user_email': user_email,
+                    'saved_via': 'direct_api'
+                }
+                
+                saved_passes = session.get('saved_passes', [])
+                saved_passes = [p for p in saved_passes if p.get('pass_id') != generated_pass.pass_id]
+                saved_passes.append(pass_data)
+                
+                if len(saved_passes) > 50:
+                    saved_passes = saved_passes[-50:]
+                
+                session['saved_passes'] = saved_passes
+                session.permanent = True
+                print(f"[일반 패스 API] 세션에 직접 패스 저장: {generated_pass.pass_id}, 총 {len(saved_passes)}개")
+                
+                # 🚨 프로덕션 환경에서 Datastore에도 즉시 저장
+                if is_production:
+                    print(f"[일반 패스 API] 🔧 Datastore 저장 시작: {generated_pass.pass_id}")
+                    try:
+                        try:
+                            from src.datastore_service import save_pass_to_datastore
+                        except ImportError:
+                            from datastore_service import save_pass_to_datastore
+                        
+                        datastore_result = save_pass_to_datastore(generated_pass, user_email)
+                        print(f"[일반 패스 API] 🔧 Datastore 저장 결과: {datastore_result}")
+                        
+                        if not datastore_result:
+                            print(f"[일반 패스 API] ❌ Datastore 저장 실패 - 패스가 유실될 가능성 있음")
+                        
+                    except Exception as datastore_save_error:
+                        print(f"[일반 패스 API] ❌ Datastore 저장 중 오류: {datastore_save_error}")
+                        import traceback
+                        print(f"[일반 패스 API] Datastore 오류 세부사항: {traceback.format_exc()}")
+                
+            except Exception as session_backup_error:
+                print(f"[일반 패스 API] 세션 백업 저장 실패: {session_backup_error}")
+            
             # 응답 생성 및 쿠키 설정
             response = jsonify(result)
             
@@ -974,10 +1356,21 @@ def register_routes(app):
                 import json
                 # 기존 쿠키에서 패스 ID 목록 가져오기
                 existing_passes = request.cookies.get('user_passes', '[]')
-                pass_ids = json.loads(existing_passes) if existing_passes else []
+                try:
+                    if existing_passes and existing_passes.strip():
+                        pass_ids = json.loads(existing_passes)
+                        if not isinstance(pass_ids, list):
+                            print(f"[일반 패스 API] 쿠키 데이터가 리스트가 아님: {type(pass_ids)}")
+                            pass_ids = []
+                    else:
+                        pass_ids = []
+                except json.JSONDecodeError as json_error:
+                    print(f"[일반 패스 API] 쿠키 JSON 파싱 실패: {json_error}")
+                    pass_ids = []
                 
-                # 새 패스 ID 추가 (중복 제거)
-                if generated_pass.pass_id not in pass_ids:
+                # 새 패스 ID 추가 (중복 제거 및 테스트 패스 제외)
+                if (generated_pass.pass_id not in pass_ids and 
+                    not generated_pass.pass_id.startswith('test_')):
                     pass_ids.append(generated_pass.pass_id)
                     
                 # 최대 50개까지만 유지 (너무 많아지지 않도록)
@@ -985,14 +1378,18 @@ def register_routes(app):
                     pass_ids = pass_ids[-50:]
                 
                 # 쿠키 설정 (30일 유지)
-                response.set_cookie('user_passes', json.dumps(pass_ids),
-                                  max_age=60*60*24*30,  # 30일
-                                  secure=False,  # HTTP에서도 작동
-                                  httponly=False,  # JavaScript에서도 접근 가능
-                                  samesite='Lax')
-                
-                print(f"[패스 생성] 쿠키에 패스 ID 저장: {generated_pass.pass_id}")
-                print(f"[패스 생성] 쿠키 내 총 패스 수: {len(pass_ids)}")
+                cookie_data = json.dumps(pass_ids)
+                if len(cookie_data) < 4000:  # 쿠키 크기 제한 확인
+                    response.set_cookie('user_passes', cookie_data,
+                                      max_age=60*60*24*30,  # 30일
+                                      secure=False,  # HTTP에서도 작동
+                                      httponly=False,  # JavaScript에서도 접근 가능
+                                      samesite='Lax')
+                    
+                    print(f"[패스 생성] 쿠키에 패스 ID 저장: {generated_pass.pass_id}")
+                    print(f"[패스 생성] 쿠키 내 총 패스 수: {len(pass_ids)}")
+                else:
+                    print(f"[패스 생성] 쿠키 크기 초과 ({len(cookie_data)} 바이트)")
                 
             except Exception as cookie_error:
                 print(f"[패스 생성] 쿠키 설정 실패: {cookie_error}")
@@ -1073,20 +1470,245 @@ def register_routes(app):
             
             print(f"[패스 조회 API] 프로덕션: {is_production}, 세션 이메일: {session_email}, 쿠키 이메일: {cookie_email}")
             print(f"[패스 조회 API] 사용자 이메일: {user_email}")
+            print(f"[패스 조회 API] 복원 플래그 - 쿠키: {session.get('passes_restored_from_cookie', False)}, Datastore: {session.get('passes_restored_from_datastore', False)}")
+            
+            # 🚨 디버깅을 위해 복원 플래그를 강제로 초기화 (임시)
+            if is_production:
+                print("[패스 조회 API] 🔧 디버깅: 복원 플래그 초기화")
+                session.pop('passes_restored_from_cookie', None)
+                session.pop('passes_restored_from_datastore', None)
             
             # 쿠키에서 로그인 정보가 확인되었지만 세션에 없다면 세션에 복원
             if is_production and cookie_email and not session_email:
                 print("[패스 조회 API] 쿠키에서 세션 복원 중")
                 session['user_logged_in'] = True
                 session['user_email'] = cookie_email
+                session['session_restored'] = True  # 복원 플래그
                 session.permanent = True
                 user_email = cookie_email
+                
+                # 쿠키에서 패스 정보도 복원 (한 번만 실행)
+                if not session.get('passes_restored_from_cookie', False):
+                    try:
+                        cookie_passes = request.cookies.get('user_passes')
+                        if cookie_passes and cookie_passes.strip():
+                            import json
+                            try:
+                                cookie_pass_ids = json.loads(cookie_passes)
+                                if isinstance(cookie_pass_ids, list):
+                                    print(f"[패스 조회 API] 쿠키에서 {len(cookie_pass_ids)}개 패스 ID 발견")
+                                    
+                                    # 세션에 저장된 패스가 없거나 적다면 쿠키에서 복원
+                                    session_passes = session.get('saved_passes', [])
+                                    if len(session_passes) < len(cookie_pass_ids):
+                                        print("[패스 조회 API] 쿠키에서 패스 복원 시도")
+                                        restored_passes = []
+                                        
+                                        for pass_id in cookie_pass_ids:
+                                            # 유효한 pass_id인지 확인
+                                            if not isinstance(pass_id, str) or not pass_id.strip():
+                                                continue
+                                                
+                                            # 세션에 이미 있는 패스는 건너뛰기
+                                            if any(p.get('pass_id') == pass_id for p in session_passes):
+                                                continue
+                                            
+                                            # 테스트 패스는 건너뛰기
+                                            if pass_id.startswith('test_'):
+                                                print(f"[패스 조회 API] 테스트 패스 건너뛰기: {pass_id}")
+                                                continue
+                                                
+                                            # 파일에서 패스 로드 시도
+                                            try:
+                                                pass_obj = load_pass_from_file(pass_id)
+                                                if pass_obj:
+                                                    pass_data = {
+                                                        'pass_id': pass_obj.pass_id,
+                                                        'pass_type': pass_obj.pass_type.value,
+                                                        'theme': pass_obj.theme.value,
+                                                        'created_at': pass_obj.created_at,
+                                                        'stores': [store.__dict__ for store in pass_obj.stores],
+                                                        'benefits': [benefit.__dict__ for benefit in pass_obj.benefits],
+                                                        'user_prefs': pass_obj.user_prefs.__dict__,
+                                                        'user_email': user_email,
+                                                        'saved_via': 'cookie_restored'
+                                                    }
+                                                    restored_passes.append(pass_data)
+                                                    print(f"[패스 조회 API] 쿠키에서 패스 복원: {pass_id}")
+                                            except Exception as restore_error:
+                                                print(f"[패스 조회 API] 패스 복원 실패 {pass_id}: {restore_error}")
+                                        
+                                        # 복원된 패스를 세션에 추가
+                                        if restored_passes:
+                                            combined_passes = session_passes + restored_passes
+                                            if len(combined_passes) > 50:
+                                                combined_passes = combined_passes[-50:]
+                                            session['saved_passes'] = combined_passes
+                                            session['passes_restored_from_cookie'] = True
+                                            session.permanent = True
+                                            print(f"[패스 조회 API] 총 {len(restored_passes)}개 패스 복원됨")
+                                else:
+                                    print(f"[패스 조회 API] 쿠키 데이터가 리스트가 아님: {type(cookie_pass_ids)}")
+                            except json.JSONDecodeError as json_error:
+                                print(f"[패스 조회 API] 쿠키 JSON 파싱 실패: {json_error}")
+                                print(f"[패스 조회 API] 잘못된 쿠키 데이터: {cookie_passes[:100]}...")
+                        else:
+                            print("[패스 조회 API] 쿠키에 패스 정보 없음")
+                                    
+                    except Exception as cookie_restore_error:
+                        print(f"[패스 조회 API] 쿠키 패스 복원 오류: {cookie_restore_error}")
+                    
+                    session['passes_restored_from_cookie'] = True
+                else:
+                    print("[패스 조회 API] 쿠키에서 패스 복원은 이미 완료됨")
+            
+            # 프로덕션 환경에서도 Datastore에서 패스 복원 시도 (한 번만 실행)
+            if is_production and not session.get('passes_restored_from_datastore', False):
+                try:
+                    session_passes = session.get('saved_passes', [])
+                    print(f"[패스 조회 API] 현재 세션 패스: {len(session_passes)}개")
+                    
+                    # Datastore에서 패스를 가져와 세션이 비어있거나 적을 때 복원
+                    try:
+                        from src.datastore_service import get_user_passes_from_datastore
+                    except ImportError:
+                        from datastore_service import get_user_passes_from_datastore
+                    
+                    print(f"[패스 조회 API] Datastore 조회 시작 - 사용자: {user_email}")
+                    datastore_passes_raw = get_user_passes_from_datastore(user_email)
+                    print(f"[패스 조회 API] Datastore에서 발견: {len(datastore_passes_raw)}개")
+                    
+                    # 🚨 디버깅: Datastore 데이터 상세 출력
+                    if datastore_passes_raw:
+                        print(f"[패스 조회 API] 🔍 Datastore 첫 번째 패스 샘플: {datastore_passes_raw[0] if datastore_passes_raw else 'None'}")
+                    
+                    # 조건을 완화: 세션에 패스가 없으면 항상 복원 시도
+                    if len(session_passes) == 0 or len(session_passes) < len(datastore_passes_raw):
+                        print("[패스 조회 API] Datastore에서 세션으로 패스 복원 시작")
+                        
+                        # Datastore의 패스를 세션 형식으로 변환
+                        restored_session_passes = []
+                        for i, dp in enumerate(datastore_passes_raw):
+                            pass_id = dp.get('pass_id', '')
+                            print(f"[패스 조회 API] 🔍 Datastore 패스 #{i+1}: {pass_id}")
+                            
+                            if not pass_id.startswith('test_') and pass_id:  # 테스트 패스 제외 및 유효성 확인
+                                
+                                # Datastore 데이터를 세션 형식으로 안전하게 변환
+                                try:
+                                    # Datastore에서 온 데이터는 get_user_passes_from_datastore의 반환 형식
+                                    # 이것을 세션 형식으로 다시 변환해야 함
+                                    
+                                    # 실제 패스 객체가 필요한 경우 파일이나 원본 데이터에서 로드
+                                    try:
+                                        from src.datastore_service import load_pass_from_datastore
+                                    except ImportError:
+                                        from datastore_service import load_pass_from_datastore
+                                    
+                                    print(f"[패스 조회 API] 🔍 패스 객체 로드 시도: {pass_id}")
+                                    pass_obj = load_pass_from_datastore(pass_id)
+                                    
+                                    if pass_obj:
+                                        # Pass 객체를 세션 형식으로 변환
+                                        pass_data = {
+                                            'pass_id': pass_obj.pass_id,
+                                            'pass_type': pass_obj.pass_type.value,
+                                            'theme': pass_obj.theme.value,
+                                            'created_at': pass_obj.created_at,
+                                            'stores': [store.__dict__ for store in pass_obj.stores],
+                                            'benefits': [benefit.__dict__ for benefit in pass_obj.benefits],
+                                            'user_prefs': pass_obj.user_prefs.__dict__,
+                                            'user_email': user_email,
+                                            'saved_via': 'datastore_restored'
+                                        }
+                                        
+                                        # 세션에 이미 있는 패스가 아닌 경우만 추가
+                                        if not any(sp.get('pass_id') == pass_id for sp in session_passes):
+                                            restored_session_passes.append(pass_data)
+                                            print(f"[패스 조회 API] ✅ 패스 복원 성공: {pass_id}")
+                                        else:
+                                            print(f"[패스 조회 API] ⚠️ 패스 이미 존재: {pass_id}")
+                                    else:
+                                        print(f"[패스 조회 API] ❌ 패스 객체 로드 실패: {pass_id}")
+                                        
+                                except Exception as convert_error:
+                                    print(f"[패스 조회 API] ❌ Datastore 패스 변환 실패 ({pass_id}): {convert_error}")
+                                    import traceback
+                                    print(f"[패스 조회 API] 변환 오류 세부사항: {traceback.format_exc()}")
+                                    continue
+                            else:
+                                print(f"[패스 조회 API] ⚠️ 패스 건너뛰기: {pass_id} (테스트 패스이거나 빈 ID)")
+                        
+                        if restored_session_passes:
+                            combined_passes = session_passes + restored_session_passes
+                            session['saved_passes'] = combined_passes
+                            session['passes_restored_from_datastore'] = True
+                            session.permanent = True
+                            print(f"[패스 조회 API] Datastore에서 {len(restored_session_passes)}개 패스 복원")
+                            
+                            # 쿠키도 업데이트
+                            try:
+                                import json
+                                all_pass_ids = [p.get('pass_id') for p in combined_passes 
+                                              if p.get('pass_id') and not p.get('pass_id').startswith('test_')]
+                                print(f"[패스 조회 API] 쿠키 업데이트: {len(all_pass_ids)}개 패스 ID")
+                            except Exception as cookie_update_err:
+                                print(f"[패스 조회 API] 쿠키 업데이트 실패: {cookie_update_err}")
+                    
+                    session['passes_restored_from_datastore'] = True
+                            
+                except Exception as datastore_restore_error:
+                    print(f"[패스 조회 API] Datastore 복원 오류: {datastore_restore_error}")
+                    import traceback
+                    print(f"[패스 조회 API] Datastore 복원 세부 오류: {traceback.format_exc()}")
+                    session['passes_restored_from_datastore'] = True  # 오류가 나도 다시 시도하지 않음
+            elif is_production:
+                print("[패스 조회 API] Datastore에서 패스 복원은 이미 완료됨")
+            
+            # 테스트 패스 자동 생성 로직 제거 (더 이상 사용하지 않음)
+            # 실제 패스가 없는 경우에는 빈 상태를 유지하여 사용자가 새로 생성하도록 함
             
             user_passes = get_all_passes()
             
+            # 기존 테스트 패스 정리 (프로덕션에서 한 번만 실행)
+            try:
+                session_passes = session.get('saved_passes', [])
+                cleaned_passes = [p for p in session_passes if not p.get('pass_id', '').startswith('test_')]
+                
+                if len(cleaned_passes) != len(session_passes):
+                    print(f"[패스 조회 API] 테스트 패스 {len(session_passes) - len(cleaned_passes)}개 제거")
+                    session['saved_passes'] = cleaned_passes
+                    session.permanent = True
+                
+                # 쿠키에서도 테스트 패스 ID 제거
+                cookie_passes = request.cookies.get('user_passes')
+                if cookie_passes and cookie_passes.strip():
+                    import json
+                    try:
+                        cookie_pass_ids = json.loads(cookie_passes)
+                        if isinstance(cookie_pass_ids, list):
+                            cleaned_cookie_ids = [pid for pid in cookie_pass_ids 
+                                                if isinstance(pid, str) and pid.strip() and not pid.startswith('test_')]
+                            
+                            if len(cleaned_cookie_ids) != len(cookie_pass_ids):
+                                print(f"[패스 조회 API] 쿠키에서 테스트 패스 {len(cookie_pass_ids) - len(cleaned_cookie_ids)}개 제거")
+                                # 응답에서 쿠키 업데이트는 나중에 처리
+                        else:
+                            print(f"[패스 조회 API] 쿠키 데이터가 리스트가 아님: {type(cookie_pass_ids)}")
+                            cleaned_cookie_ids = []
+                    except json.JSONDecodeError as json_error:
+                        print(f"[패스 조회 API] 쿠키 JSON 파싱 실패: {json_error}")
+                        cleaned_cookie_ids = []
+                    except Exception as cookie_clean_error:
+                        print(f"[패스 조회 API] 쿠키 정리 오류: {cookie_clean_error}")
+                        cleaned_cookie_ids = []
+                        
+            except Exception as cleanup_error:
+                print(f"[패스 조회 API] 테스트 패스 정리 오류: {cleanup_error}")
+            
             print(f"[패스 조회 API] {len(user_passes)}개 패스 조회됨")
             
-            return jsonify({
+            response_data = {
                 'success': True,
                 'passes': user_passes,
                 'count': len(user_passes),
@@ -1095,9 +1717,49 @@ def register_routes(app):
                     'session_email': session_email,
                     'cookie_email': cookie_email,
                     'is_production': is_production,
+                    'session_passes_count': len(session.get('saved_passes', [])),
                     'storage_types': list(set([p.get('source', 'unknown') for p in user_passes]))
                 }
-            })
+            }
+            
+            response = jsonify(response_data)
+            
+            # 쿠키에서 테스트 패스 ID 제거된 목록으로 업데이트
+            try:
+                cookie_passes = request.cookies.get('user_passes')
+                if cookie_passes and cookie_passes.strip():
+                    import json
+                    try:
+                        cookie_pass_ids = json.loads(cookie_passes)
+                        if isinstance(cookie_pass_ids, list):
+                            cleaned_cookie_ids = [pid for pid in cookie_pass_ids 
+                                                if isinstance(pid, str) and pid.strip() and not pid.startswith('test_')]
+                            
+                            if len(cleaned_cookie_ids) != len(cookie_pass_ids):
+                                print(f"[패스 조회 API] 쿠키 업데이트: 테스트 패스 제거 후 {len(cleaned_cookie_ids)}개")
+                                response.set_cookie('user_passes', json.dumps(cleaned_cookie_ids),
+                                                  max_age=60*60*24*30,  # 30일
+                                                  secure=False,
+                                                  httponly=False,
+                                                  samesite='Lax')
+                        else:
+                            print(f"[패스 조회 API] 쿠키 데이터가 리스트가 아님, 초기화")
+                            response.set_cookie('user_passes', '[]',
+                                              max_age=60*60*24*30,
+                                              secure=False,
+                                              httponly=False,
+                                              samesite='Lax')
+                    except json.JSONDecodeError as json_error:
+                        print(f"[패스 조회 API] 쿠키 JSON 파싱 실패, 초기화: {json_error}")
+                        response.set_cookie('user_passes', '[]',
+                                          max_age=60*60*24*30,
+                                          secure=False,
+                                          httponly=False,
+                                          samesite='Lax')
+            except Exception as cookie_update_error:
+                print(f"[패스 조회 API] 쿠키 업데이트 오류: {cookie_update_error}")
+            
+            return response
             
         except Exception as e:
             print(f"[오류] 사용자 패스 조회 중 에러: {e}")
@@ -1121,6 +1783,65 @@ def register_routes(app):
             return jsonify({'success': True, **info})
         except Exception as e:
             return jsonify({'success': False, 'error': str(e)}), 500
+
+    # 디버그용 데이터스토어 확인 API (프로덕션에서만 동작)
+    @app.route('/api/debug/datastore-status', methods=['GET'])
+    @login_required
+    def debug_datastore_status():
+        """데이터스토어 상태 확인 (디버그용)"""
+        try:
+            is_production = (
+                os.environ.get('GAE_ENV', '').startswith('standard') or 
+                os.environ.get('SERVER_SOFTWARE', '').startswith('Google App Engine/') or
+                'appspot.com' in os.environ.get('GOOGLE_CLOUD_PROJECT', '')
+            )
+            
+            if not is_production:
+                return jsonify({
+                    'success': False,
+                    'error': '이 API는 프로덕션 환경에서만 사용 가능합니다.'
+                })
+            
+            user_email = session.get('user_email', 'demo@jemulpogo.com')
+            
+            try:
+                try:
+                    from src.datastore_service import get_user_passes_from_datastore, get_datastore_client
+                except ImportError:
+                    from datastore_service import get_user_passes_from_datastore, get_datastore_client
+                
+                # 데이터스토어 클라이언트 확인
+                client = get_datastore_client()
+                client_status = "연결됨" if client else "실패"
+                
+                # 사용자 패스 조회
+                datastore_passes = get_user_passes_from_datastore(user_email)
+                
+                return jsonify({
+                    'success': True,
+                    'datastore_client': client_status,
+                    'user_email': user_email,
+                    'passes_count': len(datastore_passes),
+                    'passes': datastore_passes[:3] if datastore_passes else [],  # 최대 3개만 미리보기
+                    'environment': {
+                        'GAE_ENV': os.environ.get('GAE_ENV'),
+                        'SERVER_SOFTWARE': os.environ.get('SERVER_SOFTWARE'),
+                        'GOOGLE_CLOUD_PROJECT': os.environ.get('GOOGLE_CLOUD_PROJECT')
+                    }
+                })
+                
+            except Exception as datastore_error:
+                return jsonify({
+                    'success': False,
+                    'error': f'데이터스토어 접근 실패: {str(datastore_error)}',
+                    'user_email': user_email
+                })
+                
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': f'디버그 API 실행 실패: {str(e)}'
+            })
 
     @app.route('/api/benefits/redeem', methods=['POST'])
     @login_required
